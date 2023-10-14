@@ -1,0 +1,69 @@
+\section{The Language}
+
+\begin{frame}{The Language}
+
+    The language is a variation of the While language seen in class. It differs on:
+    
+    \begin{itemize}
+        \item it admits some syntactic sugar (it's not minimal);
+        \item its semantic functions are modified to allow divergence and state changes in both arithmetic and boolean expressions.
+    \end{itemize}
+    
+\end{frame}
+
+\subsection{Arithmetic Expressions}
+
+\begin{frame}{Arithmetic Expressions (1)}
+
+
+    \begin{flalign*}
+        AExp ::= & n \pipe x \pipe -e \pipe (e)  \\
+        \pipe & e_1 + e_2 \pipe e_1 - e_2 \pipe e_1 * e_2 \pipe e_1 / e_2  \\
+        \pipe & x\texttt{++} \pipe \texttt{++}x \pipe x\texttt{--} \pipe \texttt{--}x 
+    \end{flalign*}
+
+    \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
+        \begin{flalign*}
+            \semantics{A}{n} \varphi = & (n_\mathbb{Z}, \varphi) \\
+            \semantics{A}{x} \varphi = & (\varphi(x), \varphi) \\
+            \semantics{A}{(e)} \varphi = & \semantics{A}{e} \varphi \\
+            \semantics{A}{-e} \varphi = & 
+            \begin{cases}
+                (-a, \varphi') & \semantics{A}{e} \varphi = (a, \varphi') \\
+                \uparrow & (\semantics{A}{e} \varphi)\uparrow 
+            \end{cases} \\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Arithmetic Expressions (2)}
+    \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
+        \begin{flalign*}
+            \semantics{A}{e_1 / e_2} \varphi = & \begin{cases}
+                (a_1 \div a_2, \varphi'') & \semantics{A}{e_1}\varphi = (a_1, \varphi') \\
+                & \land\,\,\semantics{A}{e_2}\varphi' = (a_2, \varphi'') \\
+                & \land\,\,a_2 \neq 0\\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+            \semantics{A}{e_1\,\mathbf{op}\,e_2} \varphi = & \begin{cases}
+                (a_1\,\,op\,\,a_2, \varphi'') & \semantics{A}{e_1}\varphi = (a_1, \varphi') \\
+                & \land\,\,\semantics{A}{e_2}\varphi' = (a_2, \varphi'') \\
+            \uparrow & \text{otherwise}
+            \end{cases} \\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}{Arithmetic Expressions (3)}
+    \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
+        \begin{flalign*}
+            \semantics{A}{x\texttt{++}} \varphi = & (\varphi(x), \varphi[x \mapsto x+1]) \\
+            \semantics{A}{\texttt{++}x} \varphi = & let\,\,\varphi' = \varphi[x \mapsto x+1] \\
+            & in\,\,(\varphi'(x), \varphi') \\
+            \semantics{A}{x\texttt{--}} \varphi = & (\varphi(x), \varphi[x \mapsto x-1]) \\
+            \semantics{A}{\texttt{--}x} \varphi = & let\,\,\varphi' = \varphi[x \mapsto x-1] \\
+            & in\,\,(\varphi'(x), \varphi') \\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
