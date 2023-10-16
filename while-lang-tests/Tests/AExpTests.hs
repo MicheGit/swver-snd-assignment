@@ -23,8 +23,16 @@ testVar = testFactory (Var "x") (pa "x")
 testNeg1 = testFactory (Neg (Nat 2)) (pa "-2")
 testNeg2 = testFactory (Neg (Var "x")) (pa "-x")
 
+testInc1 = testFactory (Inc "x") (pa "x++")
+testInc2 = testFactory (PrefixInc "x") (pa "++x")
+testDec1 = testFactory (Dec "x") (pa "x--")
+testDec2 = testFactory (PrefixDec "x") (pa "--x")
+
 testOp1 = testFactory (Mul (Nat 2) (Neg (Nat 3))) (pa "2* -3")
 testOp2 = testFactory (Mul (Mul (Neg (Nat 3)) (Neg (Nat 4))) (Neg (Mul (Nat 3) (Nat 0)))) (pa "-3*-4 * -(3 * 0)")
+testOp3 = testFactory (Mul (Nat 2) (Neg (PrefixDec "x"))) (pa "2* -(--x)")
+testOp4 = testFactory (Mul (Nat 2) (Neg (PrefixDec "x"))) (pa "2*---x")
+testOp5 = testFactory (Sum (Var "x") (Mul (Nat 2) (Inc "i"))) (pa "x + 2 * i++")
 
 aexprTests = TestList
     [ testVariableName
@@ -32,6 +40,13 @@ aexprTests = TestList
     , testVar
     , testNeg1
     , testNeg2
+    , testInc1
+    , testInc2
+    , testDec1
+    , testDec2
     , testOp1
     , testOp2
+    , testOp3
+    , testOp4
+    , testOp5
     ]

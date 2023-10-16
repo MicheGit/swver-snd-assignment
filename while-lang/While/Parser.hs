@@ -18,7 +18,7 @@ type Parser = Parsec
 
 -- Input functions
 parseString :: Parser a -> String -> Either (ParseErrorBundle Text Void) a
-parseString p = parseText p . pack 
+parseString p = parseText p . pack
 
 parseText :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
 parseText p = parse p ""
@@ -64,8 +64,12 @@ parseAExp' depth = do
             return (Right term1)
 
 parseAExpLeaf :: Parser AExp
-parseAExpLeaf = choice
+parseAExpLeaf = choice $ try <$>
     [ parseNat
+    , parseInc
+    , parseDec
+    , parsePrefixInc
+    , parsePrefixDec
     , parseVar
     , parseNeg
     , betweenParenthesis parseAExp]
@@ -81,7 +85,34 @@ parseNeg = do
     symbol "-"
     Neg <$> parseAExpLeaf
 
-parseArithmeticBinOp :: Parser BinOp
+parseInc :: Parser AExp
+parseInc = lexeme $ do
+    var <- parseVariable -- no spaces
+    symbol "++"
+    -- C.space1 -- at least one space per favore
+    return (Inc var)
+
+parseDec :: Parser AExp
+parseDec = lexeme $ do
+    var <- parseVariable -- no spaces
+    symbol "--"
+    -- C.space1 -- at least one space per favore
+    return (Dec var)
+
+parsePrefixInc :: Parser AExp
+parsePrefixInc = lexeme $ do
+    symbol "++"
+    PrefixInc <$> parseVariable
+
+
+parsePrefixDec :: Parser AExp
+parsePrefixDec = lexeme $ do
+    symbol "--"
+    PrefixDec <$> parseVariable
+
+
+
+parseArithmeticBinOp :: Parser (BinOp AExp)
 parseArithmeticBinOp = choice
     [ operMul <$ symbol "*"
     , operSum <$ symbol "+"

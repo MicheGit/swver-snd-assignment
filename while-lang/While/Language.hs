@@ -9,33 +9,70 @@ data AExp
     | Sub AExp AExp
     | Mul AExp AExp
     | Div AExp AExp
+    | Inc String
+    | Dec String
+    | PrefixInc String
+    | PrefixDec String
     deriving (Eq, Show)
 
-data BinOp = BinOp
-    { prec :: Int
-    , term :: AExp -> AExp -> AExp
+-- the higher the number, the most priority it has
+-- precedence levels are from https://en.cppreference.com/w/cpp/language/operator_precedence
+
+maxPriorityLevel :: Int
+maxPriorityLevel = 17
+
+data BinOp a = BinOp
+    { prio :: Int
+    , term :: a -> a -> a
     }
 
-operMul :: BinOp
-operMul = BinOp 
-    { prec = 4
+prec :: BinOp a -> Int
+prec binop = maxPriorityLevel - prio binop
+
+operMul :: BinOp AExp
+operMul = BinOp
+    { prio = 5
     , term = Mul
     }
 
-operSum :: BinOp
-operSum = BinOp 
-    { prec = 4
+operSum :: BinOp AExp
+operSum = BinOp
+    { prio = 6
     , term = Sum
     }
 
-operSub :: BinOp
-operSub = BinOp 
-    { prec = 4
+operSub :: BinOp AExp
+operSub = BinOp
+    { prio = 6
     , term = Sub
     }
 
-operDiv :: BinOp
-operDiv = BinOp 
-    { prec = 4
+operDiv :: BinOp AExp
+operDiv = BinOp
+    { prio = 5
     , term = Div
+    }
+
+data BExp
+    = Lit Bool
+    | Not Bool
+    | And BExp BExp
+    | Or  BExp BExp
+    | Eq  AExp AExp
+    | Neq AExp AExp
+    | Low AExp AExp
+    | Leq AExp AExp
+    | Grt AExp AExp
+    | Geq AExp AExp
+
+operAnd :: BinOp BExp
+operAnd = BinOp
+    { prio = 14
+    , term = And
+    }
+
+operOr :: BinOp BExp
+operOr = BinOp
+    { prio = 15
+    , term = Or
     }
