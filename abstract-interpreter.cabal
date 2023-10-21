@@ -59,6 +59,8 @@ test-suite while-lang-tests
     hs-source-dirs:   while-lang-tests
     main-is:          Tests.hs
     other-modules:    Tests.AExpTests
+                      Tests.Common
+                      Tests.BExpTests
     build-depends:    base ^>=4.17.2.0,
                       HUnit ^>=1.6.2.0,
                       while-lang

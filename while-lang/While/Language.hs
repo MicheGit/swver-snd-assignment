@@ -1,5 +1,8 @@
 module While.Language where
+
 import GHC.Natural (Natural)
+import Prelude hiding (not)
+import qualified Prelude (not)
 
 data AExp
     = Nat Natural
@@ -55,15 +58,28 @@ operDiv = BinOp
 
 data BExp
     = Lit Bool
-    | Not Bool
     | And BExp BExp
     | Or  BExp BExp
     | Eq  AExp AExp
     | Neq AExp AExp
     | Low AExp AExp
-    | Leq AExp AExp
-    | Grt AExp AExp
-    | Geq AExp AExp
+    | GEq AExp AExp
+    deriving (Eq, Show)
+
+not :: BExp -> BExp
+not (Lit b) = Lit $ Prelude.not b
+not (And b1 b2) = Or (not b1) (not b2)
+not (Or b1 b2) = And (not b1) (not b2)
+not (Eq e1 e2) = Neq e1 e2
+not (Neq e1 e2) = Eq e1 e2
+not (Low e1 e2) = GEq e1 e2
+not (GEq e1 e2) = Low e1 e2
+
+greaterThan :: AExp -> AExp -> BExp
+greaterThan e1 e2 = Low e2 e1
+
+lowerEqual :: AExp -> AExp -> BExp
+lowerEqual e1 e2 = GEq e2 e1
 
 operAnd :: BinOp BExp
 operAnd = BinOp

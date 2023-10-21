@@ -1,14 +1,16 @@
 module Main (main) where
 
-import Tests.AExpTests
-
 import System.Exit as Exit
 
 import Test.HUnit
 
+import Tests.AExpTests
+import Tests.BExpTests
+
 tests :: Test
 tests = TestList 
     [ aexprTests
+    , bexprTests
     ]
 
 main = do
