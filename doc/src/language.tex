@@ -73,15 +73,14 @@
 \begin{frame}{Boolean Expressions (1)}
     
     \begin{flalign*}
-        BExp ::= & \texttt{true} \pipe \texttt{false} \pipe \texttt{not}\,\,b \pipe (b)\\
-        \pipe & b_1\,\,\texttt{and}\,\,b_2 \pipe b_1\,\,\texttt{or}\,\,b_2 \\ \pipe & e_1 = e_2 \pipe e_1 \neq e_2 \pipe \pipe e_1 < e_2 \pipe e_1 \geq e_2 
+        BExp ::= & \texttt{true} \pipe \texttt{false} \pipe (b) \pipe b_1\,\,\texttt{and}\,\,b_2 \pipe b_1\,\,\texttt{or}\,\,b_2 \\ \pipe & e_1 \texttt{ = } e_2 \pipe e_1 \texttt{ != } e_2 \pipe \pipe e_1 \texttt{ < } e_2 \pipe e_1 \texttt{ >= } e_2 
     \end{flalign*}
 
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
             \semantics{B}{\texttt{true}} \varphi = & (\mathbf{tt}, \varphi) \\
             \semantics{B}{\texttt{false}} \varphi = & (\mathbf{ff}, \varphi) \\
-            \semantics{B}{(b)} \varphi = & \semantics{B}{b} \\
+            \semantics{B}{(b)} \varphi = & \semantics{B}{b} \varphi\\
         \end{flalign*}
         
     \end{exampleblock}
@@ -111,12 +110,12 @@
     Comparison operations propagate updates in the state:
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
-            \semantics{B}{e_1 = e_2} \varphi = &\begin{cases}
+            \semantics{B}{e_1\texttt{ = }e_2} \varphi = &\begin{cases}
                 (a_1 = a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
             \end{cases}\\\\
-            \semantics{B}{e_1 < e_2} \varphi = & \begin{cases}
+            \semantics{B}{e_1\texttt{ < }e_2} \varphi = & \begin{cases}
                 (a_1 < a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
@@ -127,15 +126,14 @@
 
 
 \begin{frame}{Boolean Expressions (4)}
-    Comparison operations propagate updates in the state:
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
-            \semantics{B}{e_1 \neq e_2} \varphi = &\begin{cases}
+            \semantics{B}{e_1\texttt{ != }e_2} \varphi = &\begin{cases}
                 (a_1 \neq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
             \end{cases}\\\\
-            \semantics{B}{e_1 \geq e_2} \varphi = & \begin{cases}
+            \semantics{B}{e_1\texttt{ >= }e_2} \varphi = & \begin{cases}
                 (a_1 \geq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
@@ -145,32 +143,27 @@
 \end{frame}
 
 \begin{frame}{Boolean Expressions (4)}
-    Negation's semantics is expressed by syntactic sugar:
-    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
-        \begin{flalign*}
-            \semantics{B}{\texttt{not}\,\,\texttt{true}} = &\semantics{B}{\texttt{false}} \\
-            \semantics{B}{\texttt{not}\,\,\texttt{false}} = &\semantics{B}{\texttt{true}} \\
-            \semantics{B}{\texttt{not}\,\,\texttt{not}\,\,b} = &\semantics{B}{\texttt{b}} \\
-            \semantics{B}{\texttt{not}\,\,(b_1\,\,\texttt{and}\,\,b_2)} = &\semantics{B}{\texttt{not}\,\,b_1\,\,\texttt{or}\,\,\texttt{not}\,\,b_2} \\
-            \semantics{B}{\texttt{not}\,\,(b_1\,\,\texttt{or}\,\,b_2)} = &\semantics{B}{\texttt{not}\,\,b_1\,\,\texttt{and}\,\,\texttt{not}\,\,b_2} \\
-            \semantics{B}{\texttt{not}\,\,e_1 = e_2} = &\semantics{B}{e_1 \neq e_2} \\
-            \semantics{B}{\texttt{not}\,\,e_1 < e_2} = &\semantics{B}{e_1 \geq e_2} \\
-            \semantics{B}{\texttt{not}\,\,e_1 \neq e_2} = &\semantics{B}{e_1 = e_2} \\
-            \semantics{B}{\texttt{not}\,\,e_1 \geq e_2} = &\semantics{B}{e_1 < e_2} \\
-        \end{flalign*}
-    \end{exampleblock}
+    Negation is expressed by syntactic sugar:
+
+    \begin{flalign*}
+        \texttt{not}\,\,\texttt{true} &\defas \texttt{false} \\
+        \texttt{not}\,\,\texttt{false} &\defas \texttt{true} \\
+        \texttt{not}\,\,(b_1\,\,\texttt{and}\,\,b_2) &\defas \texttt{not}\,\,b_1\,\,\texttt{or}\,\,\texttt{not}\,\,b_2 \\
+        \texttt{not}\,\,(b_1\,\,\texttt{or}\,\,b_2) &\defas \texttt{not}\,\,b_1\,\,\texttt{and}\,\,\texttt{not}\,\,b_2 \\
+        \texttt{not}\,\,e_1\texttt{ = }e_2 &\defas e_1\texttt{ != }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ < }e_2 &\defas e_1\texttt{ >= }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ != }e_2 &\defas e_1\texttt{ = }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ >= }e_2 &\defas e_1\texttt{ < }e_2 \\
+    \end{flalign*}
 \end{frame}
 
 
 
 \begin{frame}{Boolean Expressions (5)}
     Also other arithmetic comparisons are expressed with syntactic sugar:
-    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
-        \begin{flalign*}
-            \semantics{B}{e_1 > e_2} = &\semantics{B}{e_2 < e_1} \\
-            \semantics{B}{e_1 \leq e_2} = &\semantics{B}{e_2 \geq e_1} \\
-            \semantics{B}{\texttt{not}\,\,e_1 > e_2} = &\semantics{B}{e_1 \leq e_2} \\
-            \semantics{B}{\texttt{not}\,\,e_1 \leq e_2} = &\semantics{B}{e_1 > e_2} \\
-        \end{flalign*}
-    \end{exampleblock}
+
+    \begin{flalign*}
+        e_1\texttt{ > }e_2 &\defas e_2\texttt{ < }e_1 \\
+        e_1\texttt{ <= }e_2 &\defas e_2\texttt{ >= }e_1 \\
+    \end{flalign*}
 \end{frame}
