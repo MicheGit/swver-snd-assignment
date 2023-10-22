@@ -1,8 +1,7 @@
 module Tests.BExpTests where
 
-import Tests.Common
-import While.Language
-import While.Parser
+import Tests.Common ( testFactory, parse )
+import While.Language ( BExp(Low, Lit, Eq, Neq, Or, And, GEq) )
 import Test.HUnit (Test(TestList))
 
 
