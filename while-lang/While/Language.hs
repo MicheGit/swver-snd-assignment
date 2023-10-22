@@ -24,9 +24,14 @@ data AExp
 maxPriorityLevel :: Int
 maxPriorityLevel = 17
 
+data BinOpAssoc
+    = LeftToRight
+    | RightToLeft
+
 data BinOp a = BinOp
     { prec :: Int
     , term :: a -> a -> a
+    , assc :: BinOpAssoc
     }
 
 prio :: BinOp a -> Int
@@ -36,24 +41,28 @@ operMul :: BinOp AExp
 operMul = BinOp
     { prec = 5
     , term = Mul
+    , assc = LeftToRight
     }
 
 operSum :: BinOp AExp
 operSum = BinOp
     { prec = 6
     , term = Sum
+    , assc = LeftToRight
     }
 
 operSub :: BinOp AExp
 operSub = BinOp
     { prec = 6
     , term = Sub
+    , assc = LeftToRight
     }
 
 operDiv :: BinOp AExp
 operDiv = BinOp
     { prec = 5
     , term = Div
+    , assc = LeftToRight
     }
 
 data BExp
@@ -85,12 +94,14 @@ operAnd :: BinOp BExp
 operAnd = BinOp
     { prec = 14
     , term = And
+    , assc = LeftToRight
     }
 
 operOr :: BinOp BExp
 operOr = BinOp
     { prec = 15
     , term = Or
+    , assc = LeftToRight
     }
 
 data Stmt
@@ -105,4 +116,5 @@ operCons :: BinOp Stmt
 operCons = BinOp
     { prec = 17
     , term = Cons
+    , assc = RightToLeft
     }

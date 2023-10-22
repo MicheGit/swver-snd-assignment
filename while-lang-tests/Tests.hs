@@ -4,13 +4,15 @@ import System.Exit as Exit
 
 import Test.HUnit
 
-import Tests.AExpTests
-import Tests.BExpTests
+import Tests.AExpTests ( aexprTests )
+import Tests.BExpTests ( bexprTests )
+import Tests.StmtTests ( stmtTests )
 
 tests :: Test
 tests = TestList 
     [ aexprTests
     , bexprTests
+    , stmtTests
     ]
 
 main = do

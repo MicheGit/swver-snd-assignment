@@ -14,4 +14,4 @@ testFactory :: (Eq a, Show a) => a -> a -> Test
 testFactory expected = TestCase . assertEqual ("should be " ++ show expected) expected
 
 parse :: (Parsable a) => String -> a
-parse = assumeParseString parseExp
+parse = assumeParseString parseTerm

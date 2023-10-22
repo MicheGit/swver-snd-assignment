@@ -58,9 +58,10 @@ test-suite while-lang-tests
     type:             exitcode-stdio-1.0
     hs-source-dirs:   while-lang-tests
     main-is:          Tests.hs
-    other-modules:    Tests.AExpTests
-                      Tests.Common
+    other-modules:    Tests.Common
+                      Tests.AExpTests
                       Tests.BExpTests
+                      Tests.StmtTests
     build-depends:    base ^>=4.17.2.0,
                       HUnit ^>=1.6.2.0,
                       while-lang

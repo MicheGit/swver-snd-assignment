@@ -37,7 +37,7 @@ instance Parsable AExp where
     , parsePrefixDec
     , parseVar
     , parseNeg
-    , betweenParenthesis parseTerm
+    , betweenRound parseTerm
     ]
   binops :: [Parser (BinOp AExp)]
   binops =
@@ -56,7 +56,7 @@ parseVar = Var <$> lexeme parseVariable
 parseNeg :: Parser AExp
 parseNeg = do
     symbol "-"
-    Neg <$> choice (try <$> leaves)
+    Neg <$> parseLeaf
 
 parseInc :: Parser AExp
 parseInc = lexeme $ do
@@ -89,7 +89,7 @@ instance Parsable BExp where
     [ parseLit
     , parseNot
     , parseCmp
-    , betweenParenthesis parseTerm
+    , betweenRound parseTerm
     ]
   binops :: [Parser (BinOp BExp)]
   binops = 
@@ -106,7 +106,7 @@ parseLit = choice
 parseNot :: Parser BExp
 parseNot = do
     keyword "not"
-    not <$> choice (try <$> leaves)
+    not <$> parseLeaf
 
 parseCmp :: Parser BExp
 parseCmp = do
@@ -131,7 +131,7 @@ instance Parsable Stmt where
     , parseSkip
     , parseBrnc
     , parseLoop
-    , betweenParenthesis parseTerm
+    , betweenCurly parseTerm
     ]
   binops :: [Parser (BinOp Stmt)]
   binops = [ operCons <$ symbol ";"]
@@ -150,21 +150,23 @@ parseBrnc = do
     keyword "if"
     b <- parseTerm
     keyword "then"
-    s1 <- parseTerm
+    s1 <- parseLeaf
     keyword "else"
-    Brnc b s1 <$> parseTerm
+    Brnc b s1 <$> parseLeaf
 
 parseLoop :: Parser Stmt
 parseLoop = do
     keyword "while"
     b <- parseTerm
     keyword "do"
-    Loop b <$> parseTerm 
+    Loop b <$> parseLeaf 
 
 -- Main Parsable typeclass
 class Parsable a where
     leaves :: [Parser a]
     binops :: [Parser (BinOp a)]
+    parseLeaf :: Parser a
+    parseLeaf = choice (try <$> leaves)
     parseTerm :: Parser a
     parseTerm = parseTerm' 0
 
@@ -176,7 +178,7 @@ class Parsable a where
     parseTerm' :: Int -> Parser a
     parseTerm' depth = do
         -- expects at least one leaf
-        term <- choice $ try <$> leaves
+        term <- parseLeaf
         loopM collectBinaryOperators term
         where
             collectBinaryOperators term1 = do
@@ -189,10 +191,12 @@ class Parsable a where
                     if prio op >= depth
                         then return op
                         else empty
-                -- since all binary operators are left associative, 
-                -- the recursive call parses only operators with higher
-                -- precedence
-                let newDepth = prio op + 1
+                -- if assoc is right to left 
+                -- then stop or parse only with higher precedence
+                -- else continue recursively
+                let newDepth = prio op + case assc op of
+                        LeftToRight -> 1
+                        RightToLeft -> 0
                 -- if the operator is accepted then parse
                 -- a higher priority expression
                 -- and continue iterating
@@ -240,7 +244,12 @@ keyword kwd = lexeme (C.string kwd <* notFollowedBy C.alphaNumChar)
 
 {- Parses a parser between round parenthesis
 -}
-betweenParenthesis :: Parser a -> Parser a
-betweenParenthesis = between (symbol "(") (symbol ")")
+betweenRound :: Parser a -> Parser a
+betweenRound = between (symbol "(") (symbol ")")
+
+{- Parses a parser between curly parenthesis
+-}
+betweenCurly :: Parser a -> Parser a
+betweenCurly = between (symbol "{") (symbol "}")
 
 
