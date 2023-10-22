@@ -25,34 +25,34 @@ maxPriorityLevel :: Int
 maxPriorityLevel = 17
 
 data BinOp a = BinOp
-    { prio :: Int
+    { prec :: Int
     , term :: a -> a -> a
     }
 
-prec :: BinOp a -> Int
-prec binop = maxPriorityLevel - prio binop
+prio :: BinOp a -> Int
+prio binop = maxPriorityLevel - prec binop
 
 operMul :: BinOp AExp
 operMul = BinOp
-    { prio = 5
+    { prec = 5
     , term = Mul
     }
 
 operSum :: BinOp AExp
 operSum = BinOp
-    { prio = 6
+    { prec = 6
     , term = Sum
     }
 
 operSub :: BinOp AExp
 operSub = BinOp
-    { prio = 6
+    { prec = 6
     , term = Sub
     }
 
 operDiv :: BinOp AExp
 operDiv = BinOp
-    { prio = 5
+    { prec = 5
     , term = Div
     }
 
@@ -83,12 +83,26 @@ lowerEqual e1 e2 = GEq e2 e1
 
 operAnd :: BinOp BExp
 operAnd = BinOp
-    { prio = 14
+    { prec = 14
     , term = And
     }
 
 operOr :: BinOp BExp
 operOr = BinOp
-    { prio = 15
+    { prec = 15
     , term = Or
+    }
+
+data Stmt
+    = Assg String AExp
+    | Skip
+    | Cons Stmt Stmt
+    | Brnc BExp Stmt Stmt
+    | Loop BExp Stmt
+    deriving (Show, Eq)
+
+operCons :: BinOp Stmt
+operCons = BinOp
+    { prec = 17
+    , term = Cons
     }

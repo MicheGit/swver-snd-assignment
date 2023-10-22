@@ -37,7 +37,7 @@ instance Parsable AExp where
     , parsePrefixDec
     , parseVar
     , parseNeg
-    , betweenParenthesis parseExp
+    , betweenParenthesis parseTerm
     ]
   binops :: [Parser (BinOp AExp)]
   binops =
@@ -89,7 +89,7 @@ instance Parsable BExp where
     [ parseLit
     , parseNot
     , parseCmp
-    , betweenParenthesis parseExp
+    , betweenParenthesis parseTerm
     ]
   binops :: [Parser (BinOp BExp)]
   binops = 
@@ -110,9 +110,9 @@ parseNot = do
 
 parseCmp :: Parser BExp
 parseCmp = do
-    e1 <- parseExp
+    e1 <- parseTerm
     cmp <- parseComparisonOperator
-    cmp e1 <$> parseExp
+    cmp e1 <$> parseTerm
 
 parseComparisonOperator :: Parser (AExp -> AExp -> BExp)
 parseComparisonOperator = choice
@@ -124,20 +124,57 @@ parseComparisonOperator = choice
     , greaterThan <$ symbol ">"
     ]
 
+instance Parsable Stmt where
+  leaves :: [Parser Stmt]
+  leaves = 
+    [ parseAssign
+    , parseSkip
+    , parseBrnc
+    , parseLoop
+    , betweenParenthesis parseTerm
+    ]
+  binops :: [Parser (BinOp Stmt)]
+  binops = [ operCons <$ symbol ";"]
+
+parseAssign :: Parser Stmt
+parseAssign = do
+    x <- parseVariable
+    symbol ":="
+    Assg x <$> parseTerm
+
+parseSkip :: Parser Stmt
+parseSkip = Skip <$ keyword "skip"
+
+parseBrnc :: Parser Stmt
+parseBrnc = do
+    keyword "if"
+    b <- parseTerm
+    keyword "then"
+    s1 <- parseTerm
+    keyword "else"
+    Brnc b s1 <$> parseTerm
+
+parseLoop :: Parser Stmt
+parseLoop = do
+    keyword "while"
+    b <- parseTerm
+    keyword "do"
+    Loop b <$> parseTerm 
+
 -- Main Parsable typeclass
 class Parsable a where
     leaves :: [Parser a]
     binops :: [Parser (BinOp a)]
-    parseExp :: Parser a
-    parseExp = parseExp' 0
+    parseTerm :: Parser a
+    parseTerm = parseTerm' 0
 
     {- All arithmetic binary operators in while are left 
         associative, and there are only two levels of 
         precedence.
         Here for simplicity the algorithm is presented as 
     -}
-    parseExp' :: Int -> Parser a
-    parseExp' depth = do
+    parseTerm' :: Int -> Parser a
+    parseTerm' depth = do
         -- expects at least one leaf
         term <- choice $ try <$> leaves
         loopM collectBinaryOperators term
@@ -149,17 +186,17 @@ class Parsable a where
                     -- but accept it only if it has at least
                     -- the precedence as the depth
                     op <- choice binops
-                    if prec op >= depth
+                    if prio op >= depth
                         then return op
                         else empty
                 -- since all binary operators are left associative, 
                 -- the recursive call parses only operators with higher
                 -- precedence
-                let newDepth = prec op + 1
+                let newDepth = prio op + 1
                 -- if the operator is accepted then parse
                 -- a higher priority expression
                 -- and continue iterating
-                Left . term op term1 <$> parseExp' newDepth
+                Left . term op term1 <$> parseTerm' newDepth
                 <|>
                 -- if the operator is not accepted (or it 
                 -- wasn't an operator at all) the AExp is
