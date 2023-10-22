@@ -157,8 +157,6 @@
     \end{flalign*}
 \end{frame}
 
-
-
 \begin{frame}{Boolean Expressions (6)}
     Also other arithmetic comparisons are expressed with syntactic sugar:
 
@@ -166,4 +164,39 @@
         e_1\texttt{ > }e_2 &\defas e_2\texttt{ < }e_1 \\
         e_1\texttt{ <= }e_2 &\defas e_2\texttt{ >= }e_1 \\
     \end{flalign*}
+\end{frame}
+
+\begin{frame}{Statements (1)}
+    \begin{flalign*}
+        \mathbf{While} ::= &\,\,x\texttt{ := }e \pipe \texttt{ skip } \pipe \{S\} \pipe S_1\texttt{ ; }S_2 \\ 
+        \pipe & \texttt{ if }b\texttt{ then }S_1\texttt{ else }S_2 \pipe \texttt{ while }b\texttt{ do }S 
+    \end{flalign*}
+
+    \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
+        \begin{flalign*}
+            \semantics[ds]{S}{x\texttt{ := } e} \varphi = & \begin{cases}
+                \varphi'[x \mapsto a] & \semantics{A}{e} \varphi = (a, \varphi') \\
+                \uparrow & \text{otherwise}
+            \end{cases} \\
+            \semantics[ds]{S}{\texttt{skip}} \varphi = & \varphi \\
+            \semantics[ds]{S}{\{S\}} \varphi = & \semantics[ds]{S}{S} \varphi\\
+        \end{flalign*}
+        
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Statements (2)}
+    \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
+        \begin{flalign*}
+            \semantics[ds]{S}{S_1\,\texttt{;}\,S_2} \varphi = & (\semantics[ds]{S}{S_2} \circ \semantics[ds]{S}{S_1}) \varphi \\
+            \semantics[ds]{S}{\texttt{if}\,b\,\texttt{then}\,S_1\,\texttt{else}\,S_2} \varphi = & cond(\semantics{B}{b}, \semantics[ds]{S}{S_1}, \semantics[ds]{S}{S_2}) \\
+            \semantics[ds]{S}{\texttt{while}\,b\,\texttt{do}\,S} \varphi = & \text{FIX}(\lambda g . cond(\semantics{B}{b}, g \circ \semantics[ds]{S}{S}, id))
+        \end{flalign*}
+        Where
+        \[ cond(pred, g_1, g_2) = \begin{cases}
+            g_1(\varphi') & pred(\varphi) = (\mathbf{tt}, \varphi') \\
+            g_2(\varphi') & pred(\varphi) = (\mathbf{ff}, \varphi') \\
+            \uparrow & \text{otherwise}
+        \end{cases} \]
+    \end{exampleblock}
 \end{frame}
