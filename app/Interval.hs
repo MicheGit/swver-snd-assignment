@@ -6,6 +6,9 @@ import GHC.Real (infinity)
 import Prelude hiding ((*), (/), (+), (-))
 import qualified Prelude
 
+-- Ranges are between Rationals since we need comparison with
+-- Infinity. However, this abstract domain will expect integers
+-- only
 data Interval
     = Range Rational Rational
     | Bot
