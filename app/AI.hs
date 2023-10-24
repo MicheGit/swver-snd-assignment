@@ -10,59 +10,83 @@ import While.Language (Stmt (Assg, Skip, Cons, Brnc, Loop), AExp, BExp, not)
 
 AState abstracts the powerset \wp(State), with `a` being an abstract representation of the values of the variable.
 
-The bottom element represents failures, which propagate over all the program (in eager evaluation). 
-However, the standard bounded lattice implementation of hasmaps handles empty hashmaps as bottom values and, generically, a missing element as bottom. Therefore, we need two distinct elements to model bottom and top elements of the states.
+The bottom element represents failures, which propagate over all the program (in eager evaluation, they remain "silent" in lazy evaluation). 
+However, the standard bounded lattice implementation of hasmaps handles empty hashmaps as bottom values and, generically, a missing element as bottom. Therefore, we need to "invert" this interpretation.
 
 Note that the only way to recover from a bottom state is in the if-then-else branching, with a \/ operation.
+
+Note also that this state representation works under the assumption that all referenced variables in a program are defined, i.e. their value, if not specified, is any (unknown). This is due to the fact that this analyzer's purpose is not to spot unused variables, but to approximate their values at runtime.  
 -}
 data (Eq a, BoundedLattice a) => AState a 
     = AState (HM.HashMap String a)
-    | Bot 
-    | Top
+    | Bot
     deriving (Eq)
 
 instance (Eq a, BoundedLattice a) => Lattice (AState a) where
   (\/) :: (Eq a, BoundedLattice a) => AState a -> AState a -> AState a
-  (AState s1) \/ (AState s2) = AState (s1 \/ s2)
+  Bot \/ a = a
+  a \/ Bot = a
+  (AState s1) \/ (AState s2) = AState (HM.intersectionWith (\/) s1 s2)
+  -- when a variable is missing in one of the two states, it becomes top
+  -- otherwise it becomes the lub of the two occurrences
 
-  (AState s1) /\ (AState s2) = AState (s1 /\ s2)
+  (/\) :: (Eq a, BoundedLattice a) => AState a -> AState a -> AState a
+  Bot /\ _ = Bot
+  _ /\ Bot = Bot
+  (AState s1) /\ (AState s2) = AState (HM.unionWith (/\) s1 s2)
+  -- when a variable is missing in one of the two states, it is "narrowed" to the other occurence
+  -- otherwise it becomes the glb of the two occurrences
 
 instance (Eq a, BoundedLattice a) => BoundedJoinSemiLattice (AState a) where
+  bottom :: (Eq a, BoundedLattice a) => AState a
   bottom = Bot
 
 instance (Eq a, BoundedLattice a) => BoundedMeetSemiLattice (AState a) where
-  top = Top
+  top :: (Eq a, BoundedLattice a) => AState a
+  top = AState HM.empty
 
 
-{- State update replaces values in the map -}
+{- 
+State update replaces values in the map.
+
+The bottom state (an error has occurred) doesn't allow updates.
+-}
 update :: (Eq a, BoundedLattice a) => String -> a -> AState a -> AState a
-update x v (AState map) = AState (HM.insert x v map)
+update x v (AState map) = 
+  if v == top
+    then AState (HM.delete x map)
+    else AState (HM.insert x v map)
+update x v Bot = Bot
 
 (|->) :: (Eq a, BoundedLattice a) => AState a -> (String, a) -> AState a
 s |-> (k, v) = update k v s
 
-{- Not found variables are interpreted as bottom. -}
+{- Not found variables are interpreted as top. -}
 lookup :: (Eq a, BoundedLattice a) => String -> AState a -> a
-lookup k (AState s) = fromMaybe bottom (HM.lookup k s)
-
-type AbstractA a = AExp -> AState a -> (a, AState a)
-type AbstractB a = BExp -> AState a -> AState a
-type AbstractD a = Stmt -> AState a -> AState a 
+lookup k (AState s) = fromMaybe top (HM.lookup k s)
+lookup k Bot = bottom
 
 type While = Stmt
 
+data EvaluationStrategy
+  = Lazy
+  | Eager
+  deriving (Show, Eq)
+
 class (Eq a, BoundedLattice a) => AI a where
-    abstractA :: AExp -> AState a -> (a, AState a)
-    abstractB :: BExp -> AState a -> AState a
-    abstractD :: Stmt -> AState a -> AState a
-    abstractD (Assg x e) s = let (a, s1) = abstractA e s
-                              in s1 |-> (x, a)
-    abstractD Skip s = s
-    abstractD (Cons st1 st2) s = (abstractD st2 . abstractD st1) s
-    abstractD (Brnc b st1 st2) s = (abstractD st1 . abstractB b) s \/ (abstractD st2 . abstractB (While.Language.not b)) s
-    abstractD (Loop b st) s = abstractB b (lfp ((s \/) . (abstractD st . abstractB b)))
-    analyze :: While -> AState a -- \times Log = [String] (opzionale)
-    analyze program = abstractD program top
+  abstractA :: AExp -> AState a -> (a, AState a)
+  abstractB :: BExp -> AState a -> AState a
+  abstractD :: Stmt -> AState a -> AState a
+  abstractD (Assg x e) s = let (a, s1) = abstractA e s
+                            in if a == bottom -- && evaluationStrategy == Eager 
+                              then bottom     -- TODO evaluation strategy: this is eager
+                              else s1 |-> (x, a)
+  abstractD Skip s = s
+  abstractD (Cons st1 st2) s = (abstractD st2 . abstractD st1) s
+  abstractD (Brnc b st1 st2) s = (abstractD st1 . abstractB b) s \/ (abstractD st2 . abstractB (While.Language.not b)) s
+  abstractD (Loop b st) s = abstractB b (lfp ((s \/) . (abstractD st . abstractB b)))
+  analyze :: While -> AState a -- \times Log = [String] (opzionale)
+  analyze program = abstractD program top
 
 
 

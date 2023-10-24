@@ -1,0 +1,45 @@
+\section{Abstract Interpreter}
+
+\subsection{Abstract States}
+
+\begin{frame}{Abstract States (1)}
+    We define for any abstract domain $A$ the abstract state type $\mathbb{S}_{A} = Var \times A$.
+    
+    \begin{alertblock}{Assumption}
+        The absence of a variable in the abstract state is interpreted as $\top$. This is due to the fact that we assume that all referenced variables in the program are initialized.
+        %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Abstract States (2)}
+
+    Moreover, $\bot_{\mathbb{S}_{A}}$ represents a runtime error, therefore no update operation can be performed over this state:
+
+    \begin{flalign*}
+        s(x) &= \begin{cases}
+            a & (x, a) \in s \\
+            \top_{A} & otherwise 
+        \end{cases} \\
+        s[x \mapsto a] &= \begin{cases}
+            \bot_{\mathbb{S}_{A}} & s = \bot_{\mathbb{S}_{A}} \\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top,\,\,s \neq \bot_{\mathbb{S}_{A}}\\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \}  & otherwise
+        \end{cases}
+    \end{flalign*}
+
+    
+\end{frame}
+
+
+\begin{frame}{Abstract States (3)}
+    
+    $\mathbb{S}$ requires that $A$ is a complete lattice, and it is a complete lattice as well:
+    \begin{flalign*}
+        \bot_{\mathbb{S}_{A}} &= \{ (x, \bot_{A}) \pipe x \in Var \} \\
+        \top_{\mathbb{S}_{A}} &= \emptyset \\
+        s_1 \lor_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \lor_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+        s_1 \land_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \land_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+        &\cup \{ e \pipe e \in s_1, e \notin s_2 \} \\
+        &\cup \{ e \pipe e \in s_2, e \notin s_1 \} \\
+    \end{flalign*}  
+\end{frame}

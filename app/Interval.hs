@@ -1,43 +1,30 @@
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Interval where
 
 import Algebra.Lattice
 import GHC.Real (infinity)
 import Prelude hiding ((*), (/), (+), (-), negate)
 import qualified Prelude
-import AI (AState, AbstractA, (|->), lookup, analyze, While, AbstractB, AI)
+import AI (AState, (|->), lookup, analyze, While, AI)
 import While.Language (AExp (Nat, Var, Neg, Sum, Sub, Mul, Div, Inc, Dec), BExp (Lit))
 import Data.Maybe (fromMaybe)
 import GHC.Natural (Natural)
 import Data.Reflection (Reifies (reflect))
 import Data.Data (Proxy (Proxy))
 
--- Ranges are between Rationals since we need comparison with
--- Infinity. However, this abstract domain will expect integers
--- only
+-- Ranges are between Rationals since we need comparison with Infinity. However, this abstract domain will expect integers only
 data Interval
     = Range Rational Rational
     | Bot
     deriving (Eq, Show)
 
-widen :: Interval -> Interval -> Interval
-widen Bot a = a
-widen a Bot = a
-widen (Range l1 h1) (Range l2 h2) = Range
-    (if l1 < l2 then l1 else -infinity)
-    (if h1 > h2 then h1 else infinity)
-
-(\\//) :: Interval -> Interval -> Interval
-(\\//) = widen
-
 instance Lattice Interval where
+    (\/) :: Interval -> Interval -> Interval
     Bot \/ a = a
     a \/ Bot = a
     Range l1 h1 \/ Range l2 h2 = Range (min l1 l2) (max h1 h2)
 
+    (/\) :: Interval -> Interval -> Interval
     Bot /\ _ = Bot
     _ /\ Bot = Bot
     Range l1 h1 /\ Range l2 h2 =
@@ -85,3 +72,13 @@ fromNatural :: Natural -> Interval
 fromNatural n =
     let r = toRational n
      in Range r r
+
+widen :: Interval -> Interval -> Interval
+widen Bot a = a
+widen a Bot = a
+widen (Range l1 h1) (Range l2 h2) = Range
+    (if l1 < l2 then l1 else -infinity)
+    (if h1 > h2 then h1 else infinity)
+
+(\\//) :: Interval -> Interval -> Interval
+(\\//) = widen
