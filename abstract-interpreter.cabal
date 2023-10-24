@@ -43,7 +43,8 @@ executable abstract-interpreter
 
     -- Modules included in this executable, other than Main.
     other-modules:    Interval,
-                      AI
+                      AI,
+                      BoundedInterval
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -51,6 +52,7 @@ executable abstract-interpreter
         base                    ^>=4.17.2.0,
         lattices                ^>=2.2,
         unordered-containers    ^>=0.2.19.1,
+        reflection              ^>=2.1.7,
         while-lang
 
     hs-source-dirs:   app
