@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE InstanceSigs #-}
 module AI where
 import qualified Data.HashMap.Lazy as HM
 import Algebra.Lattice
@@ -20,7 +18,11 @@ Note also that this state representation works under the assumption that all ref
 data (Eq a, BoundedLattice a) => AState a 
     = AState (HM.HashMap String a)
     | Bot
-    deriving (Eq)
+    deriving (Eq, Show)
+
+map :: (Eq a, BoundedLattice a, Eq b, BoundedLattice b) => (a -> b) -> AState a -> AState b
+map f Bot = Bot
+map f (AState hm) = AState (f <$> hm)
 
 instance (Eq a, BoundedLattice a) => Lattice (AState a) where
   (\/) :: (Eq a, BoundedLattice a) => AState a -> AState a -> AState a

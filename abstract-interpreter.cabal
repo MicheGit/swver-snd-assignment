@@ -47,7 +47,14 @@ executable abstract-interpreter
                       BoundedInterval
 
     -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    default-extensions:         FlexibleContexts,
+                                TypeOperators,
+                                ScopedTypeVariables,
+                                MultiParamTypeClasses,
+                                FlexibleInstances,
+                                InstanceSigs,
+                                TypeFamilies
+
     build-depends:
         base                    ^>=4.17.2.0,
         lattices                ^>=2.2,

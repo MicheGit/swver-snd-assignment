@@ -19,6 +19,9 @@ type Parser = Parsec
     Void -- An error is a runtime error
     Text -- Accepts Text as input
 
+parseWhileProgram :: String -> String -> Either (ParseErrorBundle Text Void) Stmt
+parseWhileProgram label content = parse parseTerm label (pack content)
+
 -- Input functions
 parseString :: Parser a -> String -> Either (ParseErrorBundle Text Void) a
 parseString p = parseText p . pack

@@ -73,6 +73,9 @@ fromNatural n =
     let r = toRational n
      in Range r r
 
+class (BoundedLattice a) => WidenedLattice a where
+    (\\//) :: a -> a -> a
+
 widen :: Interval -> Interval -> Interval
 widen Bot a = a
 widen a Bot = a
@@ -80,5 +83,6 @@ widen (Range l1 h1) (Range l2 h2) = Range
     (if l1 < l2 then l1 else -infinity)
     (if h1 > h2 then h1 else infinity)
 
-(\\//) :: Interval -> Interval -> Interval
-(\\//) = widen
+instance WidenedLattice Interval where
+    (\\//) :: Interval -> Interval -> Interval
+    (\\//) = widen
