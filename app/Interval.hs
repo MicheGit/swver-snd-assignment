@@ -68,11 +68,6 @@ negate :: Interval -> Interval
 negate Bot = Bot
 negate (Range l h) = Range (-h) (-l)
 
-fromNatural :: Natural -> Interval
-fromNatural n =
-    let r = toRational n
-     in Range r r
-
 class (BoundedLattice a) => WidenedLattice a where
     (\\//) :: a -> a -> a
 
@@ -86,3 +81,13 @@ widen (Range l1 h1) (Range l2 h2) = Range
 instance WidenedLattice Interval where
     (\\//) :: Interval -> Interval -> Interval
     (\\//) = widen
+
+
+fromNatural :: Natural -> Interval
+fromNatural n =
+    let r = toRational n
+     in Range r r
+
+size :: Interval -> Int
+size Interval.Bot = 0
+size (Interval.Range l h) = round $ h Prelude.- l

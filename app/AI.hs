@@ -15,7 +15,7 @@ Note that the only way to recover from a bottom state is in the if-then-else bra
 
 Note also that this state representation works under the assumption that all referenced variables in a program are defined, i.e. their value, if not specified, is any (unknown). This is due to the fact that this analyzer's purpose is not to spot unused variables, but to approximate their values at runtime.  
 -}
-data (Eq a, BoundedLattice a) => AState a 
+data (Eq a, BoundedLattice a) => AState a
     = AState (HM.HashMap String a)
     | Bot
     deriving (Eq, Show)
@@ -54,7 +54,7 @@ State update replaces values in the map.
 The bottom state (an error has occurred) doesn't allow updates.
 -}
 update :: (Eq a, BoundedLattice a) => String -> a -> AState a -> AState a
-update x v (AState map) = 
+update x v (AState map) =
   if v == top
     then AState (HM.delete x map)
     else AState (HM.insert x v map)
@@ -77,7 +77,8 @@ data EvaluationStrategy
 
 class (Eq a, BoundedLattice a) => AI a where
   abstractA :: AExp -> AState a -> (a, AState a)
-  abstractB :: BExp -> AState a -> AState a
+  -- B# toglie gli stati in cui non può essere vero BExp, e poi gli applica il side effect
+  abstractB :: BExp -> AState a -> AState a -- perde la sua funzione da filtro per via dei side effect
   abstractD :: Stmt -> AState a -> AState a
   abstractD (Assg x e) s = let (a, s1) = abstractA e s
                             in if a == bottom -- && evaluationStrategy == Eager 
@@ -89,11 +90,6 @@ class (Eq a, BoundedLattice a) => AI a where
   abstractD (Loop b st) s = abstractB b (lfp ((s \/) . (abstractD st . abstractB b)))
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
-
-
-
-
-
 
 
 

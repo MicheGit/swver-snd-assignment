@@ -10,10 +10,7 @@ import System.Environment (getArgs)
 import Control.Exception (throw)
 import While.Parser (parseWhileProgram)
 import Data.Proxy (Proxy(Proxy))
-
-instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) where
-  abstractA e s = (bind Interval.Bot, s)
-  abstractB = error "Not implemented"
+import While.Language
 
 bindAnalysis :: (Rational, Rational) -> While -> AState Interval
 bindAnalysis b program = reify b computation
