@@ -11,17 +11,18 @@ import Control.Exception (throw)
 import While.Parser (parseWhileProgram)
 import Data.Proxy (Proxy(Proxy))
 
-
 instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) where
   abstractA e s = (bind Interval.Bot, s)
   abstractB = error "Not implemented"
 
-boundedAnalysis :: (Rational, Rational) -> While -> AState Interval
-boundedAnalysis b program = reify b compute
-  where 
-    compute :: (AI (BoundedInterval s (Rational, Rational))) => Proxy s -> AState Interval
-    compute p = AI.map unbox $ analyze program
-
+bindAnalysis :: (Rational, Rational) -> While -> AState Interval
+bindAnalysis b program = reify b computation
+  where
+  computation :: forall s. (Boundable s (Rational, Rational) Interval) => Proxy s -> AState Interval
+  computation reifiedBounds = 
+    let result :: AState (BoundedInterval s (Rational, Rational))
+        result = analyze program
+      in AI.map unbox result
 
 main :: IO ()
 main = do
@@ -33,7 +34,7 @@ main = do
   arg2 <- getLine
   let n :: Rational
       n = maybe infinity toRational (readMaybe arg2)
-  print $ boundedAnalysis (m, n) program
+  print $ bindAnalysis (m, n) program
 
 getParsedProgram :: IO While
 getParsedProgram = do
