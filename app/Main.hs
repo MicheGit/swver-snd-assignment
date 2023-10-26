@@ -32,7 +32,9 @@ main = do
   arg2 <- getLine
   let n :: Rational
       n = maybe infinity toRational (readMaybe arg2)
-  print $ "Upper bound set to " ++ show n
+  print $ if m <= n
+    then "Analyzing program with Intervals within [" ++ show m ++ ", " ++ show n ++ "]"
+    else "Analyzing program with constant propagation"
   print $ bindAnalysis (m, n) program
 
 getParsedProgram :: IO While
