@@ -73,19 +73,26 @@ instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) whe
         s' = s |-> (x, val')
      in (val', s')
 
-  abstractB (Lit True) s = s
-  abstractB (Lit False) s = bottom
+  abstractB (Lit True) s = (s, bottom)
+  abstractB (Lit False) s = (bottom, s)
   abstractB (Or b1 b2) s =
-    let s1 = abstractB b1 s
-        s2 = abstractB b2 s1
-     in _ -- TODO
-  abstractB (And b1 b2) s = (abstractB b2 . abstractB b1) s -- prendo gli stati in cui può essere vero b1, applico il side effect, poi prendo gli stati dove può essere vero b2 e applico i side effect
+    let (sthen1, selse1) = abstractB b1 s
+     in if selse1 == bottom
+      then (sthen1, selse1) -- then for sure b1 evaluates to true or a runtime error, must not compute b2
+      else let (sthen2, selse2) = abstractB b2 selse1 -- compute only when b1 evaluates to false
+            in (sthen1 \/ sthen2, selse2) -- to evaluate false, the only case is that the second one evaluates false
+  abstractB (And b1 b2) s = 
+    let (sthen1, selse1) = abstractB b1 s
+     in if sthen1 == bottom
+      then (sthen1, selse1) -- then for sure b1 evaluates to false or a runtime error, must not compute b2 
+      else let (sthen2, selse2) = abstractB b2 sthen1 -- compute only when b1 evaluates to true
+            in (sthen2, selse1 \/ selse2)
   abstractB (Eq e1 e2) s =
     let (a1, s1) = abstractA e1 s
         (a2, s2) = abstractA e2 s1
-     in if a1 /\ a2 /= bottom
-      then s2
-      else bottom
+     in if a1 == bottom || a2 == bottom
+      then (bottom, bottom)
+      else 
   abstractB (Neq e1 e2) s =
     let (BI a1, s1) = abstractA e1 s
         (BI a2, s2) = abstractA e2 s1

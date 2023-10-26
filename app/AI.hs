@@ -78,7 +78,7 @@ data EvaluationStrategy
 class (Eq a, BoundedLattice a) => AI a where
   abstractA :: AExp -> AState a -> (a, AState a)
   -- B# toglie gli stati in cui non può essere vero BExp, e poi gli applica il side effect
-  abstractB :: BExp -> AState a -> AState a -- perde la sua funzione da filtro per via dei side effect
+  abstractB :: BExp -> AState a -> (AState a, AState a) -- il primo sono gli stati in cui la condizione può essere vera, a cui viene applicato il side effect il secondo sono gli stati in cui la condizione può essere falsa, a cui viene applicato il side effect
   abstractD :: Stmt -> AState a -> AState a
   abstractD (Assg x e) s = let (a, s1) = abstractA e s
                             in if a == bottom -- && evaluationStrategy == Eager 
@@ -86,7 +86,9 @@ class (Eq a, BoundedLattice a) => AI a where
                               else s1 |-> (x, a)
   abstractD Skip s = s
   abstractD (Cons st1 st2) s = (abstractD st2 . abstractD st1) s
-  abstractD (Brnc b st1 st2) s = (abstractD st1 . abstractB b) s \/ (abstractD st2 . abstractB (While.Language.not b)) s
+  abstractD (Brnc b st1 st2) s =
+    let (sthen, selse) = abstractB b s
+     in abstractD st1 sthen \/ abstractD st2 selse
   abstractD (Loop b st) s = abstractB b (lfp ((s \/) . (abstractD st . abstractB b)))
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
