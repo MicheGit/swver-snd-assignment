@@ -5,12 +5,10 @@ import Interval
 import AI
 import Algebra.Lattice
 import GHC.Natural (Natural)
+import GHC.Real (infinity)
 import While.Language
 import Prelude hiding ((*), (/), (+), (-), negate)
 import qualified Prelude
-
-mkBound :: (Reifies s (Rational, Rational)) => Proxy s -> Interval
-mkBound bound = uncurry Range (reflect bound)
 
 newtype (r ~ (Rational, Rational), Reifies s r) => BoundedInterval s r = BI Interval
     deriving (Show, Eq)
@@ -27,9 +25,20 @@ class Reifies s r => Boundable s r a where
 instance (Reifies s (Rational, Rational)) => Boundable s (Rational, Rational) Interval where
   bind :: Interval -> BoundedInterval s (Rational, Rational)
   bind Interval.Bot = bottom
-  bind rng =
-    let widener = mkBound (Proxy :: Proxy s)
-     in BI (rng \\// widener)
+  bind (Interval.Range l h) 
+    | l == h      = BI (Interval.Range l h)
+    | m > n       = top
+    | otherwise   = BI (Interval.Range l1 h1)
+    where 
+      (m, n) = reflect (Proxy :: Proxy s)
+      l1
+        | l < m     = -infinity   
+        | l > n     = n
+        | otherwise = l
+      h1
+        | h > n     = infinity
+        | h < m     = m
+        | otherwise = h
 
 instance Lattice (BoundedInterval s r) where
   (BI i) \/ (BI j) = BI $ i \/ j
@@ -81,21 +90,46 @@ instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) whe
       then (sthen1, selse1) -- then for sure b1 evaluates to true or a runtime error, must not compute b2
       else let (sthen2, selse2) = abstractB b2 selse1 -- compute only when b1 evaluates to false
             in (sthen1 \/ sthen2, selse2) -- to evaluate false, the only case is that the second one evaluates false
-  abstractB (And b1 b2) s = 
+  abstractB (And b1 b2) s =
     let (sthen1, selse1) = abstractB b1 s
      in if sthen1 == bottom
       then (sthen1, selse1) -- then for sure b1 evaluates to false or a runtime error, must not compute b2 
       else let (sthen2, selse2) = abstractB b2 sthen1 -- compute only when b1 evaluates to true
             in (sthen2, selse1 \/ selse2)
-  abstractB (Eq e1 e2) s =
-    let (a1, s1) = abstractA e1 s
-        (a2, s2) = abstractA e2 s1
-     in if a1 == bottom || a2 == bottom
-      then (bottom, bottom)
-      else 
-  abstractB (Neq e1 e2) s =
-    let (BI a1, s1) = abstractA e1 s
-        (BI a2, s2) = abstractA e2 s1
-     in if a1 == a2 && size a1 == 1
-      then bottom
-      else s2
+  abstractB (Eq e1 e2) s
+    | a1 == bottom || a2 == bottom      = (bottom, bottom)
+    | a1 /\ a2 == bottom                = (bottom, s2)
+    | a1 == a2 && size (unbox a1) == 1  = (s2, bottom)
+    | otherwise                         = (s2, s2)
+    where
+      (a1, s1) = abstractA e1 s
+      (a2, s2) = abstractA e2 s1
+  abstractB (Neq e1 e2) s
+    | a1 == bottom || a2 == bottom      = (bottom, bottom)
+    | a1 /\ a2 == bottom                = (s2, bottom)
+    | a1 == a2 && size (unbox a1) == 1  = (bottom, s2)
+    | otherwise                         = (s2, s2)
+    where
+      (a1, s1) = abstractA e1 s
+      (a2, s2) = abstractA e2 s1
+  abstractB (Low e1 e2) s
+    | a1 == bottom || a2 == bottom      = (bottom, bottom)
+    | forSureLow a1 a2                  = (s2, bottom)
+    | forSureGEq a1 a2                  = (bottom, s2)
+    | otherwise                         = (s2, s2)
+    where
+      (a1, s1) = abstractA e1 s
+      (a2, s2) = abstractA e2 s1
+  abstractB (GEq e1 e2) s
+    | a1 == bottom || a2 == bottom      = (bottom, bottom)
+    | forSureLow a1 a2                  = (bottom, s2)
+    | forSureGEq a1 a2                  = (s2, bottom)
+    | otherwise                         = (s2, s2)
+    where
+      (a1, s1) = abstractA e1 s
+      (a2, s2) = abstractA e2 s1
+
+forSureLow :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
+forSureLow (BI (Range _ h)) (BI (Range l _)) = h < l
+forSureGEq :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
+forSureGEq (BI (Range l _)) (BI (Range _ h)) = l >= h

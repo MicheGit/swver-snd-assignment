@@ -16,7 +16,7 @@ bindAnalysis :: (Rational, Rational) -> While -> AState Interval
 bindAnalysis b program = reify b computation
   where
   computation :: forall s. (Boundable s (Rational, Rational) Interval) => Proxy s -> AState Interval
-  computation reifiedBounds = 
+  computation reifiedBounds =
     let result :: AState (BoundedInterval s (Rational, Rational))
         result = analyze program
       in AI.map unbox result
@@ -28,9 +28,11 @@ main = do
   arg1 <- getLine
   let m :: Rational
       m = maybe infinity toRational (readMaybe arg1)
+  print $ "Lower bound set to " ++ show m
   arg2 <- getLine
   let n :: Rational
       n = maybe infinity toRational (readMaybe arg2)
+  print $ "Upper bound set to " ++ show n
   print $ bindAnalysis (m, n) program
 
 getParsedProgram :: IO While

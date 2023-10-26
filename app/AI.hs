@@ -89,7 +89,14 @@ class (Eq a, BoundedLattice a) => AI a where
   abstractD (Brnc b st1 st2) s =
     let (sthen, selse) = abstractB b s
      in abstractD st1 sthen \/ abstractD st2 selse
-  abstractD (Loop b st) s = abstractB b (lfp ((s \/) . (abstractD st . abstractB b)))
+  abstractD (Loop b st) s = snd $ abstractB b (lfp loopIteration)
+    where
+      loopIteration :: AState a -> AState a
+      loopIteration s' =
+        let (afterGuardTrue, _) = abstractB b s'
+            afterBody = abstractD st afterGuardTrue
+         in s \/ afterBody
+
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
 

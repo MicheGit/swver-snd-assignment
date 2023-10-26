@@ -38,7 +38,7 @@ library while-lang
 
     default-extensions: OverloadedStrings
 
-executable abstract-interpreter
+executable ai
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
