@@ -88,6 +88,12 @@ fromNatural n =
     let r = toRational n
      in Range r r
 
+
+{-
+>>> infinity Prelude.+ 1
+Ratio has zero denominator
+-}
+
 size :: Interval -> Int
 size Interval.Bot = 0
 size (Interval.Range l h) = round $ h Prelude.- l
