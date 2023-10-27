@@ -4,13 +4,10 @@ import Data.Proxy (Proxy (Proxy))
 import Interval
 import AI
 import Algebra.Lattice
-import GHC.Natural (Natural)
-import GHC.Real (infinity)
 import While.Language
-import Prelude hiding ((*), (/), (+), (-), negate)
-import qualified Prelude
+import InfiniteIntegers
 
-newtype (r ~ (Rational, Rational), Reifies s r) => BoundedInterval s r = BI Interval
+newtype (r ~ (InfInt, InfInt), Reifies s r) => BoundedInterval s r = BI Interval
     deriving (Show, Eq)
 
 unbox :: BoundedInterval s r -> Interval
@@ -22,8 +19,8 @@ A type a is Boundable from a value r reified by the type s.
 class Reifies s r => Boundable s r a where
   bind :: a -> BoundedInterval s r
 
-instance (Reifies s (Rational, Rational)) => Boundable s (Rational, Rational) Interval where
-  bind :: Interval -> BoundedInterval s (Rational, Rational)
+instance (Reifies s (InfInt, InfInt)) => Boundable s (InfInt, InfInt) Interval where
+  bind :: Interval -> BoundedInterval s (InfInt, InfInt)
   bind Interval.Bot = bottom
   bind (Interval.Range l h) 
     | l == h      = BI (Interval.Range l h)
@@ -32,11 +29,11 @@ instance (Reifies s (Rational, Rational)) => Boundable s (Rational, Rational) In
     where 
       (m, n) = reflect (Proxy :: Proxy s)
       l1
-        | l < m     = -infinity   
+        | l < m     = -Infinity   
         | l > n     = n
         | otherwise = l
       h1
-        | h > n     = infinity
+        | h > n     = Infinity
         | h < m     = m
         | otherwise = h
 
@@ -58,8 +55,11 @@ abstractBinOp op e1 e2 s =
       (BI a2, s2) = abstractA e2 s1
    in (bind $ a1 `op` a2, s2)
 
-instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) where
-  abstractA (Nat n) s = (bind $ fromNatural n, s)
+instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
+  abstractA (Nat n) s =
+    let i :: Interval
+        i = fromIntegral n
+     in (bind i, s)
   abstractA (Var x) s = (AI.lookup x s, s)
   abstractA (Sum e1 e2) s = abstractBinOp (+) e1 e2 s
   abstractA (Sub e1 e2) s = abstractBinOp (-) e1 e2 s
@@ -67,18 +67,18 @@ instance (r ~ (Rational, Rational), Reifies s r) => AI (BoundedInterval s r) whe
   abstractA (Div e1 e2) s = abstractBinOp (/) e1 e2 s
   abstractA (Inc x) s =
     let BI val = AI.lookup x s
-     in (bind val, s |-> (x, bind $ val + fromNatural 1))
+     in (bind val, s |-> (x, bind $ val + 1))
   abstractA (Dec x) s =
     let BI val = AI.lookup x s
-     in (bind val, s |-> (x, bind $ val - fromNatural 1))
+     in (bind val, s |-> (x, bind $ val - 1))
   abstractA (PrefixInc x) s =
     let BI val = AI.lookup x s
-        val' = bind $ val + fromNatural 1
+        val' = bind $ val + 1
         s' = s |-> (x, val')
      in (val', s')
   abstractA (PrefixDec x) s =
     let BI val = AI.lookup x s
-        val' = bind $ val - fromNatural 1
+        val' = bind $ val - 1
         s' = s |-> (x, val')
      in (val', s')
 

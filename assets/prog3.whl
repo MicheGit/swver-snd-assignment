@@ -1,5 +1,5 @@
 x := 3;
-if y = 0 and x++ < 10 then {
+if y++ = 0 and x < 10 then {
     x := 10
 } else {
     x := 5
