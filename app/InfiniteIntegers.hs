@@ -22,12 +22,12 @@ instance Num InfInt where
   a + b                   = b + a
 
   (*) :: InfInt -> InfInt -> InfInt
+  Finite 0 * _            = Finite 0
+  _ * Finite 0            = Finite 0
   Finite i * Finite j     = Finite $ i * j
   a * b
-    | a == b              = Infinity
-    | isFinite a          = b
-    | a == NegInfinity    = NegInfinity
-    | otherwise           = b * a 
+    | signum a == signum b  = Infinity
+    | otherwise             = NegInfinity
 
   abs :: InfInt -> InfInt
   abs (Finite i)  = Finite (abs i)

@@ -1,6 +1,6 @@
 module AI where
 import qualified Data.HashMap.Lazy as HM
-import Algebra.Lattice
+import Algebra.Lattice 
 import Data.Maybe (fromMaybe)
 import While.Language (Stmt (Assg, Skip, Cons, Brnc, Loop), AExp, BExp, not)
 
@@ -89,16 +89,27 @@ class (Eq a, BoundedLattice a) => AI a where
   abstractD (Brnc b st1 st2) s =
     let (sthen, selse) = abstractB b s
      in abstractD st1 sthen \/ abstractD st2 selse
-  abstractD (Loop b st) s = snd $ abstractB b (lfp loopIteration)
+  abstractD (Loop b st) s = snd $ abstractB b $ lfp loopIteration
     where
       loopIteration :: AState a -> AState a
-      loopIteration s' =
-        let (afterGuardTrue, _) = abstractB b s'
-            afterBody = abstractD st afterGuardTrue
-         in s \/ afterBody
+      loopIteration precondition =
+        let (afterGuardTrue, _) = abstractB b precondition
+            postcondition = abstractD st afterGuardTrue
+         in s \/ postcondition
 
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
+
+-- lfp :: (Eq a, BoundedLattice a) => (AState a -> AState a) -> AState a
+-- lfp = lfp' bottom
+
+-- lfp' :: (Eq a, BoundedLattice a) => AState a -> (AState a -> AState a ) -> AState a
+-- lfp' s fn =
+--   let s' = fn s
+--    in if s' == s
+--     then s'
+--     else lfp' s' fn
+
 
 
 

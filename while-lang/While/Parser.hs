@@ -120,10 +120,10 @@ parseCmp = do
 parseComparisonOperator :: Parser (AExp -> AExp -> BExp)
 parseComparisonOperator = choice
     [ Eq          <$ symbol "="
+    , lowerEqual  <$ symbol "<="
     , Low         <$ symbol "<"
     , Neq         <$ symbol "!="
     , GEq         <$ symbol ">="
-    , lowerEqual  <$ symbol "<="
     , greaterThan <$ symbol ">"
     ]
 

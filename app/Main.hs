@@ -27,7 +27,7 @@ main = do
   print "Insert a range to instance the Bounded Interval domain (leave blank for infinity):"
   arg1 <- getLine
   let m :: InfInt
-      m = maybe Infinity fromInteger (readMaybe arg1)
+      m = maybe (-Infinity) fromInteger (readMaybe arg1)
   print $ "Lower bound set to " ++ show m
   arg2 <- getLine
   let n :: InfInt

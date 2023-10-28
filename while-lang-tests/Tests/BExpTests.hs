@@ -17,6 +17,7 @@ testCmp = TestList $ uncurry testFactory <$>
 testOps = TestList $ uncurry testFactory <$>
     [ (Or (And (Low (parse "2") (parse "3")) (GEq (parse "6") (parse "++x")))  (Low (parse "y * x") (parse "4")), parse "2 < 3 and not 6 < ++x or 4 > y*x")
     , (parse "3 >= n or x++ != n", parse "not (n > 3 and x++ = n)")
+    , (GEq (parse "100") (parse "x++"), parse "x++ <= 100")
     ]
 
 bexprTests = TestList

@@ -11,8 +11,8 @@ testBranch = testFactory (Cons (Brnc (parse "3 < x++") (parse "x := 4") Skip) (p
 
 testWhile :: Test
 testWhile = testFactory (Cons (parse "x := 1") 
-        (Cons (Loop (parse "--y > 0") (Cons (parse "x := x * y") Skip))
-                (parse "z := x"))) (parse "x:=1; while --y > 0 do { x:=x * y ; skip } ; z := x")
+        (Cons (Loop (parse "--y <= 0") (Cons (parse "x := x * y") Skip))
+                (parse "z := x"))) (parse "x:=1; while --y <= 0 do { x:=x * y ; skip } ; z := x")
 
 stmtTests = TestList
     [ testAssign
