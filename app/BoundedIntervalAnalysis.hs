@@ -1,54 +1,21 @@
-module BoundedInterval where
-import Data.Reflection (Reifies (reflect), reify)
-import Data.Proxy (Proxy (Proxy))
-import Interval
-import AI
-import Algebra.Lattice
+module BoundedIntervalAnalysis where
+
+import Prelude hiding (lookup)
+
+import Data.Reflection
+import Data.Proxy
+
 import While.Language
-import InfiniteIntegers
 
-newtype (r ~ (InfInt, InfInt), Reifies s r) => BoundedInterval s r = BI Interval
-    deriving (Show, Eq)
+import Algebra.PartialOrd
+import Algebra.Lattice
 
-unbox :: BoundedInterval s r -> Interval
-unbox (BI i) = i
+import AbstractDomains.Interval
+import AbstractDomains.BoundedInterval
+import AbstractDomains.InfiniteIntegers
+import AbstractDomains.Extra
 
-{-
-A type a is Boundable from a value r reified by the type s.
--}
-class Reifies s r => Boundable s r a where
-  bind :: a -> BoundedInterval s r
-
-instance (Reifies s (InfInt, InfInt)) => Boundable s (InfInt, InfInt) Interval where
-  bind :: Interval -> BoundedInterval s (InfInt, InfInt)
-  bind Interval.Bot = bottom
-  bind (Interval.Range l h) 
-    | l == h      = BI (Interval.Range l h)
-    | m > n       = top
-    | otherwise   = BI (Interval.Range l1 h1)
-    where 
-      (m, n) = reflect (Proxy :: Proxy s)
-      l1
-        | l < m     = -Infinity   
-        | l > n     = n
-        | otherwise = l
-      h1
-        | h > n     = Infinity
-        | h < m     = m
-        | otherwise = h
-
-instance Lattice (BoundedInterval s r) where
-  (BI i) \/ (BI j) = BI $ i \/ j
-  (BI i) /\ (BI j) = BI $ i /\ j
-
-instance BoundedMeetSemiLattice (BoundedInterval s r) where
-  top = BI top
-
-instance BoundedJoinSemiLattice (BoundedInterval s r) where
-  bottom = BI bottom
-
-instance WidenedLattice (BoundedInterval s r) where
-  (BI i) \\// (BI j) = BI (i \\// j)
+import AbstractInterpreter
 
 abstractBinOp op e1 e2 s =
   let (BI a1, s1) = abstractA e1 s
@@ -56,32 +23,43 @@ abstractBinOp op e1 e2 s =
    in (bind $ a1 `op` a2, s2)
 
 instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
+  widen :: (state ~ AState (BoundedInterval s r)) => state -> state -> state
+  widen x succ                                              -- the x_{n+1} value in widened iteration sequences in bounded intervals is:
+    | m /= NegInfinity && n /= Infinity   = succ            -- F(x_n) - if the interval domain is bounded, the k-k-t sequence converges
+    | succ `leq` x                        = x               -- x_n - if the domain is not bounded, adding no new information forces the widened iteration sequence to converge
+    | otherwise                           = x \\// succ     -- widen - if the domain is not bounded, new informations might not converge, therefore the widen operator is applied, simulating an infinite iteration sequence
+    where
+      (m, n) = reflect (Proxy :: Proxy s)
+
+  abstractA :: (state ~ AState (BoundedInterval s r)) => AExp -> state -> (BoundedInterval s r, state)    
   abstractA (Nat n) s =
     let i :: Interval
         i = fromIntegral n
      in (bind i, s)
-  abstractA (Var x) s = (AI.lookup x s, s)
+  abstractA (Var x) s = (lookup x s, s)
   abstractA (Sum e1 e2) s = abstractBinOp (+) e1 e2 s
   abstractA (Sub e1 e2) s = abstractBinOp (-) e1 e2 s
   abstractA (Mul e1 e2) s = abstractBinOp (*) e1 e2 s
   abstractA (Div e1 e2) s = abstractBinOp (/) e1 e2 s
   abstractA (Inc x) s =
-    let BI val = AI.lookup x s
+    let BI val = lookup x s
      in (bind val, s |-> (x, bind $ val + 1))
   abstractA (Dec x) s =
-    let BI val = AI.lookup x s
+    let BI val = lookup x s
      in (bind val, s |-> (x, bind $ val - 1))
   abstractA (PrefixInc x) s =
-    let BI val = AI.lookup x s
+    let BI val = lookup x s
         val' = bind $ val + 1
         s' = s |-> (x, val')
      in (val', s')
   abstractA (PrefixDec x) s =
-    let BI val = AI.lookup x s
+    let BI val = lookup x s
         val' = bind $ val - 1
         s' = s |-> (x, val')
      in (val', s')
 
+  
+  abstractB :: (state ~ AState (BoundedInterval s r)) => BExp -> state -> (state, state)
   abstractB (Lit True) s = (s, bottom)
   abstractB (Lit False) s = (bottom, s)
   abstractB (Or b1 b2) s =
@@ -133,3 +111,8 @@ forSureLow :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
 forSureLow (BI (Range _ h)) (BI (Range l _)) = h < l
 forSureGEq :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
 forSureGEq (BI (Range l _)) (BI (Range _ h)) = l >= h
+
+{-
+>>>forSureGEq (BI $ Range (Finite 1) Infinity) (BI $ Range (Finite 100) (Finite 100))
+False
+-}

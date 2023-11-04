@@ -1,8 +1,13 @@
-module AI where
-import qualified Data.HashMap.Lazy as HM
-import Algebra.Lattice 
+module AbstractInterpreter where
+
 import Data.Maybe (fromMaybe)
-import While.Language (Stmt (Assg, Skip, Cons, Brnc, Loop), AExp, BExp, not)
+import qualified Data.HashMap.Lazy as HM
+
+import Algebra.Lattice 
+
+import AbstractDomains.Extra
+import While.Language
+
 
 {- The type of the abstract state. 
 
@@ -47,6 +52,11 @@ instance (Eq a, BoundedLattice a) => BoundedMeetSemiLattice (AState a) where
   top :: (Eq a, BoundedLattice a) => AState a
   top = AState HM.empty
 
+instance (Eq a, WidenedLattice a) => WidenedLattice (AState a) where
+  (\\//) :: (Eq a, WidenedLattice a) => AState a -> AState a -> AState a
+  Bot \\// a = a
+  a \\// Bot = Bot
+  AState s1 \\// AState s2 = AState (HM.intersectionWith (\\//) s1 s2)
 
 {- 
 State update replaces values in the map.
@@ -70,12 +80,14 @@ lookup k Bot = bottom
 
 type While = Stmt
 
-data EvaluationStrategy
-  = Lazy
-  | Eager
-  deriving (Show, Eq)
+-- TODO
+-- data EvaluationStrategy
+--   = Lazy
+--   | Eager
+--   deriving (Show, Eq)
 
 class (Eq a, BoundedLattice a) => AI a where
+  widen :: AState a -> AState a -> AState a
   abstractA :: AExp -> AState a -> (a, AState a)
   -- B# toglie gli stati in cui non può essere vero BExp, e poi gli applica il side effect
   abstractB :: BExp -> AState a -> (AState a, AState a) -- il primo sono gli stati in cui la condizione può essere vera, a cui viene applicato il side effect il secondo sono gli stati in cui la condizione può essere falsa, a cui viene applicato il side effect
@@ -89,28 +101,15 @@ class (Eq a, BoundedLattice a) => AI a where
   abstractD (Brnc b st1 st2) s =
     let (sthen, selse) = abstractB b s
      in abstractD st1 sthen \/ abstractD st2 selse
-  abstractD (Loop b st) s = snd $ abstractB b $ lfp loopIteration
-    where
-      loopIteration :: AState a -> AState a
-      loopIteration precondition =
-        let (afterGuardTrue, _) = abstractB b precondition
-            postcondition = abstractD st afterGuardTrue
-         in s \/ postcondition
+  abstractD (Loop b st) s = snd $ abstractB b $ lfp (loopIteration b st s)
 
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
 
--- lfp :: (Eq a, BoundedLattice a) => (AState a -> AState a) -> AState a
--- lfp = lfp' bottom
 
--- lfp' :: (Eq a, BoundedLattice a) => AState a -> (AState a -> AState a ) -> AState a
--- lfp' s fn =
---   let s' = fn s
---    in if s' == s
---     then s'
---     else lfp' s' fn
-
-
-
-
+loopIteration :: (AI a) => BExp -> While -> AState a -> AState a -> AState a
+loopIteration b st s precondition =
+  let (afterGuardTrue, _) = abstractB b precondition
+      postcondition = abstractD st afterGuardTrue
+    in widen precondition (s \/ postcondition)
 

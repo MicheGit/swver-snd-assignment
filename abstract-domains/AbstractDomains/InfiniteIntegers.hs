@@ -1,7 +1,9 @@
-module InfiniteIntegers where
+module AbstractDomains.InfiniteIntegers where
+
 import GHC.Natural (Natural)
-import Algebra.Lattice
 import GHC.Real (infinity)
+
+import Algebra.Lattice
 
 data InfInt
     = Finite Integer

@@ -28,7 +28,7 @@ library while-lang
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.17.2.0,
+    build-depends:    base        ^>=4.17.2.0,
                       megaparsec  ^>=9.5.0,
                       text        ^>=2,
                       extra       ^>=1.7.14,
@@ -38,29 +38,47 @@ library while-lang
 
     default-extensions: OverloadedStrings
 
+library abstract-domains
+    exposed-modules:    AbstractDomains.Extra
+                        AbstractDomains.InfiniteIntegers
+                        AbstractDomains.Interval
+                        AbstractDomains.BoundedInterval
+    
+    build-depends:      base            ^>=4.17.2.0,
+                        reflection      ^>=2.1.7,
+                        lattices        ^>=2.2
+
+    hs-source-dirs:     abstract-domains
+    default-language:   Haskell2010
+
+    default-extensions: UndecidableInstances,
+                        InstanceSigs,
+                        MultiParamTypeClasses,
+                        FlexibleContexts,
+                        FlexibleInstances,
+                        TypeOperators,
+                        ScopedTypeVariables
+
 executable ai
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules:    Interval,
-                      AI,
-                      BoundedInterval,
-                      InfiniteIntegers
+    other-modules:      AbstractInterpreter,
+                        BoundedIntervalAnalysis
 
     -- LANGUAGE extensions used by modules in this package.
-    default-extensions:         FlexibleContexts,
-                                TypeOperators,
-                                ScopedTypeVariables,
-                                MultiParamTypeClasses,
-                                FlexibleInstances,
+    default-extensions:         TypeOperators,
                                 InstanceSigs,
-                                TypeFamilies
+                                ScopedTypeVariables,
+                                FlexibleContexts,
+                                MonoLocalBinds
 
     build-depends:
         base                    ^>=4.17.2.0,
         lattices                ^>=2.2,
         unordered-containers    ^>=0.2.19.1,
         reflection              ^>=2.1.7,
+        abstract-domains,
         while-lang
 
     hs-source-dirs:   app
@@ -69,7 +87,7 @@ executable ai
 test-suite while-lang-tests
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
-    hs-source-dirs:   while-lang-tests
+    hs-source-dirs:   tests/while-lang-tests
     main-is:          Tests.hs
     other-modules:    Tests.Common
                       Tests.AExpTests
@@ -78,3 +96,18 @@ test-suite while-lang-tests
     build-depends:    base ^>=4.17.2.0,
                       HUnit ^>=1.6.2.0,
                       while-lang
+
+test-suite ai-tests
+    default-language:   Haskell2010
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     tests/ai-tests
+    main-is:            Tests.hs
+    -- other-modules:
+    build-depends:      base ^>=4.17.2.0,
+                        HUnit ^>=1.6.2.0, 
+                        lattices                ^>=2.2,
+                        unordered-containers    ^>=0.2.19.1,
+                        reflection              ^>=2.1.7,
+                        abstract-domains,
+                        while-lang
+                        -- , ai     

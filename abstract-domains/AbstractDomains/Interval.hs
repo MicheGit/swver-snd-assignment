@@ -1,7 +1,9 @@
-module Interval where
+module AbstractDomains.Interval where
 
 import Algebra.Lattice
-import InfiniteIntegers (InfInt (Infinity))
+
+import AbstractDomains.InfiniteIntegers
+import AbstractDomains.Extra
 
 -- Ranges are between Rationals since we need comparison with Infinity. However, this abstract domain will expect integers only
 data Interval
@@ -82,21 +84,14 @@ instance BoundedMeetSemiLattice Interval where
     top :: Interval
     top = Range (-Infinity) Infinity
 
-class (BoundedLattice a) => WidenedLattice a where
-    (\\//) :: a -> a -> a
-
 size :: Interval -> InfInt
 size Bot         = 0
 size (Range l h) = h - l
 
-
-widen :: Interval -> Interval -> Interval
-widen Bot a = a
-widen a Bot = a
-widen (Range l1 h1) (Range l2 h2) = Range
-    (if l1 < l2 then l1 else -Infinity)
-    (if h1 > h2 then h1 else Infinity)
-
 instance WidenedLattice Interval where
-    (\\//) :: Interval -> Interval -> Interval
-    (\\//) = widen
+  (\\//) :: Interval -> Interval -> Interval
+  Bot \\// a = a
+  a \\// Bot = a
+  (Range l1 h1) \\//  (Range l2 h2) = Range
+      (if l1 < l2 then l1 else -Infinity)
+      (if h1 > h2 then h1 else Infinity)

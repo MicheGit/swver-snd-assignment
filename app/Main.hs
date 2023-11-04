@@ -1,16 +1,18 @@
 module Main where
 import Data.Reflection
-import AI
-import BoundedInterval
-import Interval
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import System.Environment (getArgs)
 import Control.Exception (throw)
 import While.Parser (parseWhileProgram)
 import Data.Proxy (Proxy(Proxy))
-import While.Language
-import InfiniteIntegers
+
+import AbstractDomains.InfiniteIntegers
+import AbstractDomains.Interval
+import AbstractDomains.BoundedInterval
+
+import AbstractInterpreter
+import BoundedIntervalAnalysis
 
 bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
 bindAnalysis b program = reify b computation
@@ -19,7 +21,7 @@ bindAnalysis b program = reify b computation
   computation reifiedBounds =
     let result :: AState (BoundedInterval s (InfInt, InfInt))
         result = analyze program
-      in AI.map unbox result
+      in AbstractInterpreter.map unbox result
 
 main :: IO ()
 main = do
