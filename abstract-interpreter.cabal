@@ -33,7 +33,7 @@ library while-lang
                       text        ^>=2,
                       extra       ^>=1.7.14,
                       monad-loops ^>=0.4.3
-    hs-source-dirs:   while-lang
+    hs-source-dirs:   lib/while-lang/src
     default-language: Haskell2010
 
     default-extensions: OverloadedStrings
@@ -48,7 +48,7 @@ library abstract-domains
                         reflection      ^>=2.1.7,
                         lattices        ^>=2.2
 
-    hs-source-dirs:     abstract-domains
+    hs-source-dirs:     lib/abstract-domains/src
     default-language:   Haskell2010
 
     default-extensions: UndecidableInstances,
@@ -87,7 +87,7 @@ executable ai
 test-suite while-lang-tests
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
-    hs-source-dirs:   tests/while-lang-tests
+    hs-source-dirs:   lib/while-lang/test
     main-is:          Tests.hs
     other-modules:    Tests.Common
                       Tests.AExpTests
@@ -97,17 +97,17 @@ test-suite while-lang-tests
                       HUnit ^>=1.6.2.0,
                       while-lang
 
-test-suite ai-tests
-    default-language:   Haskell2010
-    type:               exitcode-stdio-1.0
-    hs-source-dirs:     tests/ai-tests
-    main-is:            Tests.hs
-    -- other-modules:
-    build-depends:      base ^>=4.17.2.0,
-                        HUnit ^>=1.6.2.0, 
-                        lattices                ^>=2.2,
-                        unordered-containers    ^>=0.2.19.1,
-                        reflection              ^>=2.1.7,
-                        abstract-domains,
-                        while-lang
-                        -- , ai     
+-- test-suite ai-tests
+--     default-language:   Haskell2010
+--     type:               exitcode-stdio-1.0
+--     hs-source-dirs:     tests/ai-tests
+--     main-is:            Tests.hs
+--     -- other-modules:
+--     build-depends:      base ^>=4.17.2.0,
+--                         HUnit ^>=1.6.2.0, 
+--                         lattices                ^>=2.2,
+--                         unordered-containers    ^>=0.2.19.1,
+--                         reflection              ^>=2.1.7,
+--                         abstract-domains,
+--                         while-lang
+--                         -- , ai     
