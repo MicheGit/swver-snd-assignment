@@ -1,0 +1,29 @@
+\section{Implementation}
+
+\subsection{The Interval Domain}
+
+\begin{frame}{The Interval Domain (1)}
+    \[ I_{m,n} \subset \wp(\mathbb{Z})\text{ with }m,n\in\mathbb{Z}\cup{-\infty, \infty}\]
+    \begin{flalign*}
+        I_{m,n} & = \{ \mathbb{Z}, \emptyset \} \cup \{ \{ z \} \pipe z \in \mathbb{Z} \} \\
+        & \cup \{ \{ x \pipe w <= x <= z \} \pipe x,w,z \in \mathbb{Z}\text{ s.t. }m <= w <= z <= n \} \\
+        & \cup \{ \{ x \pipe x \leq z \} \pipe x,z \in \mathbb{Z}\text{ s.t. }m <= z <= n\} \\
+        & \cup \{ \{ x \pipe x \geq z \} \pipe x,z \in \mathbb{Z}\text{ s.t. }m <= z <= n\} \\
+    \end{flalign*}
+\end{frame}
+
+\begin{frame}{The Interval Domain (2)}
+
+    \begin{exampleblock}{$I_{m,n}$ is partially ordered}
+        \[ i_1 \leq i_2 \iff i_1 \subseteq i_2 \]
+    \end{exampleblock}
+
+    \begin{exampleblock}{$I_{m,n}$ is a complete lattice}
+        \begin{flalign*}
+            \bot_{I_{m,n}} &= \emptyset \\
+            \top_{I_{m,n}} &= \mathbb{Z} \\
+            \lor_{I_{m,n}} &= \cup \\
+            \land_{I_{m,n}} &= \cap
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}

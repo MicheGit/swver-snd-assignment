@@ -24,7 +24,11 @@
     \mathcal{#2}_{#1} \llbracket #3 \rrbracket
 }
 
-\title{Abstract interpretation with numeric intervals}
+\newcommand{\asem}[3][]{
+    \mathcal{#2}^{\sharp}_{#1} \llbracket #3 \rrbracket
+}
+
+\title{Abstract interpretation with bounded numeric intervals}
 \subtitle{Second assignment of the Software Verification course, A.Y. 2022/2023}
 \author{Christian Micheletti}
 \date{\today}
@@ -40,6 +44,7 @@
 
     \input{src/language.tex}
 	\input{src/abstract-interpreter.tex}
+	\input{src/implementation.tex}
 
 
 	\section{Introduction}

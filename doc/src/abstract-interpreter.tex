@@ -3,17 +3,17 @@
 \subsection{Abstract States}
 
 \begin{frame}{Abstract States (1)}
-    We define for any abstract domain $A$ the abstract state type $\mathbb{S}_{A} = Var \times A$.
+    We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_{A} = Map(Var, A)$.
     
     \begin{alertblock}{Assumption}
-        The absence of a variable in the abstract state is interpreted as $\top$. This is due to the fact that we assume that all referenced variables in the program are initialized.
+        The absence of a variable in the abstract state is interpreted as $\top_{A}$. This is due to the fact that we assume that all referenced variables in the program are initialized.
         %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
     \end{alertblock}
 \end{frame}
 
 \begin{frame}{Abstract States (2)}
 
-    Moreover, $\bot_{\mathbb{S}_{A}}$ represents a runtime error, therefore no update operation can be performed over this state:
+    Moreover, $\bot_{\mathbb{S}_{A}}$ represents an abnormal termination (no update operation can be performed over this state):
 
     \begin{flalign*}
         s(x) &= \begin{cases}
@@ -22,7 +22,7 @@
         \end{cases} \\
         s[x \mapsto a] &= \begin{cases}
             \bot_{\mathbb{S}_{A}} & s = \bot_{\mathbb{S}_{A}} \\
-            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top,\,\,s \neq \bot_{\mathbb{S}_{A}}\\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top_{A},\,\,s \neq \bot_{\mathbb{S}_{A}}\\
             \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \}  & otherwise
         \end{cases}
     \end{flalign*}
@@ -32,14 +32,52 @@
 
 
 \begin{frame}{Abstract States (3)}
+    \begin{exampleblock}{$\mathbb{S}_{A}$ is partially ordered}
+        \[ s_1 \leq s_2 \iff s_1(x) \leq s_2(x)\,\,\forall x \in Var \]
+    \end{exampleblock}
+
+    \begin{exampleblock}{$\mathbb{S}_{A}$ is a complete lattice}
+        \begin{flalign*}
+            \bot_{\mathbb{S}_{A}} &= \{ (x, \bot_{A}) \pipe x \in Var \} \\
+            \top_{\mathbb{S}_{A}} &= \emptyset \\
+            s_1 \lor_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \lor_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+            s_1 \land_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \land_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+            &\cup \{ e \pipe e \in s_1, e \notin s_2 \} \cup \{ e \pipe e \notin s_1,e \in s_2 \} \\
+        \end{flalign*} 
+    \end{exampleblock} 
+\end{frame}
+
+\subsection{Abstract Semantics of Statements}
+
+\begin{frame}{Abstract Semantics of Statements (1)}
+    The abstract semantic functions are:
+    \begin{itemize}
+        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{A} \to A \times \mathbb{S}_{A}$:
+        \begin{itemize}
+            \item the first element of the tuple approximates the result returned by arithmetic expression;
+            \item the second element approximates the state after the transition induced by the expression;
+        \end{itemize}
+        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{A} \to (\mathbb{S}_A \times \mathbb{S}_A)$;
+        \begin{itemize}
+            \item the first element of the tuple approximates the states where the boolean expression would evaluate \textbf{tt};
+            \item the second element approximates the states where the negation of the boolean expression would evaluate \textbf{tt}.
+        \end{itemize}
+        %% per mantenere rappresentato lo short-circuit degli operatori logici mantenendo la definizione composizionale era necessario che la funzione B# restituisse anche lo stato in caso BExp valutasse a falso
+        \item $\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to\mathbb{S}_{A}$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Abstract Semantics of Statements (2)}
+    \begin{exampleblock}{$\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
+        
+        \begin{flalign*}
+            \asem{D}{\text{x := e}} s^{\sharp} & \defas
+            \begin{cases}
+                s'^\sharp [x \mapsto a] & (a, s'^\sharp) = \asem{A}{e} s^\sharp\\ 
+                & \land a \neq \bot_A \\
+                \bot_{\mathbb{S}_{A}} & otherwise
+            \end{cases}
+        \end{flalign*}
+    \end{exampleblock}
     
-    $\mathbb{S}$ requires that $A$ is a complete lattice, and it is a complete lattice as well:
-    \begin{flalign*}
-        \bot_{\mathbb{S}_{A}} &= \{ (x, \bot_{A}) \pipe x \in Var \} \\
-        \top_{\mathbb{S}_{A}} &= \emptyset \\
-        s_1 \lor_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \lor_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
-        s_1 \land_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \land_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
-        &\cup \{ e \pipe e \in s_1, e \notin s_2 \} \\
-        &\cup \{ e \pipe e \in s_2, e \notin s_1 \} \\
-    \end{flalign*}  
 \end{frame}
