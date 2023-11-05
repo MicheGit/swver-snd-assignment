@@ -28,17 +28,17 @@ instance (Reifies s (InfInt, InfInt)) => Boundable s (InfInt, InfInt) Interval w
   bind Bot = bottom
   bind (Range l h) 
     | l == h      = BI (Range l h)
-    | m > n       = top
+    | d > u       = top
     | otherwise   = BI (Range l1 h1)
     where 
-      (m, n) = reflect (Proxy :: Proxy s)
+      (d, u) = reflect (Proxy :: Proxy s)
       l1
-        | l < m     = -Infinity   
-        | l > n     = n
+        | l < d     = -Infinity   
+        | l > u     = u
         | otherwise = l
       h1
-        | h > n     = Infinity
-        | h < m     = m
+        | h > u     = Infinity
+        | h < d     = d
         | otherwise = h
 
 instance Lattice (BoundedInterval s r) where

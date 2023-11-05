@@ -77,7 +77,8 @@ library interval-analysis
     default-extensions: TypeOperators,
                         InstanceSigs,
                         ScopedTypeVariables,
-                        FlexibleContexts
+                        FlexibleContexts,
+                        MonoLocalBinds
 
 executable ai
     main-is:            Main.hs
@@ -86,10 +87,7 @@ executable ai
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    default-extensions: FlexibleContexts,
-                        RankNTypes,
-                        ScopedTypeVariables,
-                        MonoLocalBinds
+    -- default-extensions: 
 
 
     build-depends:      base                    ^>=4.17.2.0,
@@ -114,6 +112,17 @@ test-suite while-lang-tests
     build-depends:    base ^>=4.17.2.0,
                       HUnit ^>=1.6.2.0,
                       while-lang
+
+test-suite abstract-domains-tests
+    default-language:   Haskell2010
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     lib/abstract-domains/test
+    main-is:            Tests.hs
+    -- other-modules:
+    build-depends:      base ^>=4.17.2.0,
+                        HUnit ^>=1.6.2.0,
+                        reflection ^>=2.1.7,
+                        abstract-domains
 
 test-suite interval-analysis-tests
     default-language:   Haskell2010

@@ -14,15 +14,6 @@ import AbstractDomains.BoundedInterval
 import AbstractInterpreter
 import BoundedIntervalAnalysis
 
-bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
-bindAnalysis b program = reify b computation
-  where
-  computation :: forall s. (Boundable s (InfInt, InfInt) Interval) => Proxy s -> AState Interval
-  computation reifiedBounds =
-    let result :: AState (BoundedInterval s (InfInt, InfInt))
-        result = analyze program
-      in AbstractInterpreter.map unbox result
-
 main :: IO ()
 main = do
   program <- getParsedProgram

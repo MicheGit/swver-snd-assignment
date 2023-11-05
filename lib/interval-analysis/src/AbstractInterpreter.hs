@@ -25,6 +25,9 @@ data (Eq a, BoundedLattice a) => AState a
     | Bot
     deriving (Eq, Show)
 
+fromList :: (Eq a, BoundedLattice a) => [(String, a)] -> AState a
+fromList = foldl (|->) top 
+
 map :: (Eq a, BoundedLattice a, Eq b, BoundedLattice b) => (a -> b) -> AState a -> AState b
 map f Bot = Bot
 map f (AState hm) = AState (f <$> hm)

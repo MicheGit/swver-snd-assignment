@@ -116,3 +116,12 @@ forSureGEq (BI (Range l _)) (BI (Range _ h)) = l >= h
 >>>forSureGEq (BI $ Range (Finite 1) Infinity) (BI $ Range (Finite 100) (Finite 100))
 False
 -}
+
+bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
+bindAnalysis bounds program = reify bounds computation
+  where
+  computation :: forall s. (Boundable s (InfInt, InfInt) Interval) => Proxy s -> AState Interval
+  computation reifiedBounds =
+    let result :: AState (BoundedInterval s (InfInt, InfInt))
+        result = analyze program
+      in AbstractInterpreter.map unbox result
