@@ -59,30 +59,48 @@ library abstract-domains
                         TypeOperators,
                         ScopedTypeVariables
 
-executable ai
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    other-modules:      AbstractInterpreter,
+library interval-analysis
+    exposed-modules:    AbstractInterpreter
                         BoundedIntervalAnalysis
 
+    build-depends:      base            ^>=4.17.2.0,
+                        reflection      ^>=2.1.7,
+                        lattices        ^>=2.2,
+                        unordered-containers    ^>=0.2.19.1,
+                        while-lang,
+                        abstract-domains
+
+    hs-source-dirs:     lib/interval-analysis/src
+    
+    default-language:   Haskell2010
+
+    default-extensions: TypeOperators,
+                        InstanceSigs,
+                        ScopedTypeVariables,
+                        FlexibleContexts
+
+executable ai
+    main-is:            Main.hs
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
     -- LANGUAGE extensions used by modules in this package.
-    default-extensions:         TypeOperators,
-                                InstanceSigs,
-                                ScopedTypeVariables,
-                                FlexibleContexts,
-                                MonoLocalBinds
+    default-extensions: FlexibleContexts,
+                        RankNTypes,
+                        ScopedTypeVariables,
+                        MonoLocalBinds
 
-    build-depends:
-        base                    ^>=4.17.2.0,
-        lattices                ^>=2.2,
-        unordered-containers    ^>=0.2.19.1,
-        reflection              ^>=2.1.7,
-        abstract-domains,
-        while-lang
 
-    hs-source-dirs:   app
-    default-language: Haskell2010
+    build-depends:      base                    ^>=4.17.2.0,
+                        unordered-containers    ^>=0.2.19.1,
+                        reflection              ^>=2.1.7,
+                        abstract-domains,
+                        while-lang,
+                        interval-analysis
+
+    hs-source-dirs:     app
+    default-language:   Haskell2010
 
 test-suite while-lang-tests
     default-language: Haskell2010
@@ -97,17 +115,17 @@ test-suite while-lang-tests
                       HUnit ^>=1.6.2.0,
                       while-lang
 
--- test-suite ai-tests
---     default-language:   Haskell2010
---     type:               exitcode-stdio-1.0
---     hs-source-dirs:     tests/ai-tests
---     main-is:            Tests.hs
---     -- other-modules:
---     build-depends:      base ^>=4.17.2.0,
---                         HUnit ^>=1.6.2.0, 
---                         lattices                ^>=2.2,
---                         unordered-containers    ^>=0.2.19.1,
---                         reflection              ^>=2.1.7,
---                         abstract-domains,
---                         while-lang
---                         -- , ai     
+test-suite interval-analysis-tests
+    default-language:   Haskell2010
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     lib/interval-analysis/test
+    main-is:            Tests.hs
+    -- other-modules:
+    build-depends:      base ^>=4.17.2.0,
+                        HUnit ^>=1.6.2.0, 
+                        lattices                ^>=2.2,
+                        unordered-containers    ^>=0.2.19.1,
+                        reflection              ^>=2.1.7,
+                        abstract-domains,
+                        while-lang,
+                        interval-analysis
