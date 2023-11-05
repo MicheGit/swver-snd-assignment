@@ -92,6 +92,6 @@ instance WidenedLattice Interval where
   (\\//) :: Interval -> Interval -> Interval
   Bot \\// a = a
   a \\// Bot = a
-  (Range l1 h1) \\//  (Range l2 h2) = Range
-      (if l1 < l2 then l1 else -Infinity)
-      (if h1 > h2 then h1 else Infinity)
+  (Range l1 h1) \\// (Range l2 h2) = Range
+      (if l1 <= l2 then l1 else -Infinity)
+      (if h1 >= h2 then h1 else Infinity)

@@ -111,8 +111,8 @@ class (Eq a, BoundedLattice a) => AI a where
 
 
 loopIteration :: (AI a) => BExp -> While -> AState a -> AState a -> AState a
-loopIteration b st s precondition =
+loopIteration b st initialState precondition =
   let (afterGuardTrue, _) = abstractB b precondition
       postcondition = abstractD st afterGuardTrue
-    in widen precondition (s \/ postcondition)
+    in widen precondition (initialState \/ postcondition)
 
