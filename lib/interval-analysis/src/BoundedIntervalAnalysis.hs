@@ -25,7 +25,7 @@ abstractBinOp op e1 e2 s =
 instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
   widen :: (state ~ AState (BoundedInterval s r)) => state -> state -> state
   widen x succ                                              -- the x_{n+1} value in widened iteration sequences in bounded intervals is:
-    | m /= NegInfinity && n /= Infinity   = succ            -- F(x_n) - if the interval domain is bounded, the k-k-t sequence converges
+    | m /= NegInfinity && n /= Infinity   = succ            -- F(x_n) - if the interval domain is bounded, the k-k-t sequence converges (no widen operation is required)
     | succ `leq` x                        = x               -- x_n - if the domain is not bounded, adding no new information forces the widened iteration sequence to converge
     | otherwise                           = x \\// succ     -- widen - if the domain is not bounded, new informations might not converge, therefore the widen operator is applied, simulating an infinite iteration sequence
     where

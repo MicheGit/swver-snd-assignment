@@ -3,7 +3,7 @@ module AbstractInterpreter where
 import Data.Maybe (fromMaybe)
 import qualified Data.HashMap.Lazy as HM
 
-import Algebra.Lattice 
+import Algebra.Lattice
 
 import AbstractDomains.Extra
 import While.Language
@@ -26,7 +26,7 @@ data (Eq a, BoundedLattice a) => AState a
     deriving (Eq, Show)
 
 fromList :: (Eq a, BoundedLattice a) => [(String, a)] -> AState a
-fromList = foldl (|->) top 
+fromList = foldl (|->) top
 
 map :: (Eq a, BoundedLattice a, Eq b, BoundedLattice b) => (a -> b) -> AState a -> AState b
 map f Bot = Bot
@@ -104,15 +104,35 @@ class (Eq a, BoundedLattice a) => AI a where
   abstractD (Brnc b st1 st2) s =
     let (sthen, selse) = abstractB b s
      in abstractD st1 sthen \/ abstractD st2 selse
-  abstractD (Loop b st) s = snd $ abstractB b $ lfp (loopIteration b st s)
+  abstractD (Loop b st) s =
+    let widenedInvariant = lfp (loopIteration _F)
+        narrowedInvariant = gfpFrom widenedInvariant _F -- this refines the widened invariant 
+        -- cutting out all the states that are not a target state from some state in the invariant.
+        -- Since this domain has no infinite descending chains, the gfp always converges 
+        -- in finite time, thus there is no use for a narrowing approximation of the glb.
+     in snd $ abstractB b narrowedInvariant
+    where
+      _F = (s \/) . abstractD st . fst . abstractB b
+      --                           ^^^
+      -- fst takes the states where b can be true
 
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
 
+{-
+Represents a (possibly widened) iteration sequence with:
+- F(x) = (initialState \/ (D#[[S]] . B#[[b]]) x )
+- x^{n+1} = x^n `widen` F(x^n)
+When the AI class is istantiated with (m,n) as bounds, then
+  widen x^n succ = succ, so:
+    x^{n+1} = x^n `widen` F(x^n) = F(x^n) 
+  as in a simple fixpoint iteration sequence.
+When, instead, one of the bounds is infinite, then
+  widen x^n succ = x^n \\// succ, so:
+    x^{n+1} = x^n \\// F(x^n)
+  as in a widened iteration sequence.
 
-loopIteration :: (AI a) => BExp -> While -> AState a -> AState a -> AState a
-loopIteration b st initialState precondition =
-  let (afterGuardTrue, _) = abstractB b precondition
-      postcondition = abstractD st afterGuardTrue
-    in widen precondition (initialState \/ postcondition)
+-}
+loopIteration :: (AI a) => (AState a -> AState a) -> AState a -> AState a
+loopIteration _F precondition = precondition `widen` _F precondition
 
