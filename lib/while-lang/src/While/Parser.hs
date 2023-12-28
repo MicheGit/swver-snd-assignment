@@ -221,7 +221,7 @@ parseVariable = lexeme $ some C.lowerChar
 -- This space consumer consumes all spaces, expecting none
 sc :: Parser ()
 sc = L.space C.space1 -- consume as many spaces possible
-    empty -- expect no line comment
+    (L.skipLineComment "//")-- expect no line comment
     empty -- expect no multi-line comment
 
 {- Lexeme: behaves as the input parser would,

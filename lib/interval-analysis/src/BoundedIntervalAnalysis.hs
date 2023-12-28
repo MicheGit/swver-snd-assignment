@@ -144,3 +144,14 @@ bindAnalysis bounds program = reify bounds computation
     let result :: AState (BoundedInterval s (InfInt, InfInt))
         result = analyze program
       in AbstractInterpreter.map unbox result
+
+instance (r ~ (InfInt, InfInt), Reifies s r) => LogAI (BoundedInterval s r) 
+
+bindAnalysisLog :: (InfInt, InfInt) -> While -> InvariantLog Interval
+bindAnalysisLog bounds program = reify bounds computation
+  where
+    computation :: forall s. (Boundable s (InfInt, InfInt) Interval) => Proxy s -> InvariantLog Interval
+    computation _ =
+      let result :: [InvariantLog (BoundedInterval s (InfInt, InfInt))]
+          result = analyzeLog program
+       in decode (AbstractInterpreter.map unbox) (List result)

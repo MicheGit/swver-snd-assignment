@@ -1,5 +1,5 @@
 x := 5;
 while x != x / 2 do x := x - 1;
 x := x + 8;
-if x < -8 then x := -8 else skip;
-if x = x / 2 then x := x * 2 else x := 0
+if x < 0 then x := 0 else skip;
+if x = (x + 4) / 2 then x := x * 2 else x := 8

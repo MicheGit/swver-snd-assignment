@@ -16,7 +16,7 @@ import BoundedIntervalAnalysis
 
 main :: IO ()
 main = do
-  program <- getParsedProgram
+  (filename, program) <- getParsedProgram
   print "Insert a range to instance the Bounded Interval domain (leave blank for infinity):"
   arg1 <- getLine
   let m :: InfInt
@@ -29,8 +29,10 @@ main = do
     then "Analyzing program with Intervals within [" ++ show m ++ ", " ++ show n ++ "]"
     else "Analyzing program with constant propagation"
   print $ bindAnalysis (m, n) program
+  let invariants = bindAnalysisLog (m, n) program
+  writeFile (filename ++ ".inv") (show invariants)
 
-getParsedProgram :: IO While
+getParsedProgram :: IO (String, While)
 getParsedProgram = do
   args <- getArgs
   filename <- case args of
@@ -42,7 +44,7 @@ getParsedProgram = do
   filecontent <- readFile filename
   let result = parseWhileProgram filename filecontent
   case result of
-    Right program -> return program
+    Right program -> return (filename, program)
     Left error -> do
       print error
       throw $ userError "Syntax Error"

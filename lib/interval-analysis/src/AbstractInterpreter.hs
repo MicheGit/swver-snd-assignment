@@ -7,6 +7,8 @@ import Algebra.Lattice
 
 import AbstractDomains.Extra
 import While.Language
+import Data.HashMap.Lazy (toList)
+import Data.List (intercalate)
 
 
 {- The type of the abstract state. 
@@ -23,13 +25,20 @@ Note also that this state representation works under the assumption that all ref
 data (Eq a, BoundedLattice a) => AState a
     = AState (HM.HashMap String a)
     | Bot
-    deriving (Eq, Show)
+    deriving (Eq)
 
 fromList :: (Eq a, BoundedLattice a) => [(String, a)] -> AState a
 fromList = foldl (|->) top
 
+showVariable :: (Show a1, Show a2) => (a1, a2) -> String
+showVariable (k, v) = show k ++ ": " ++ show v
+
+instance (Eq a, BoundedLattice a, Show a) => Show (AState a) where
+  show Bot = "BOTTOM STATE"
+  show (AState hm) = "{" ++ intercalate "," (showVariable <$> toList hm) ++ "}"
+
 map :: (Eq a, BoundedLattice a, Eq b, BoundedLattice b) => (a -> b) -> AState a -> AState b
-map f Bot = Bot
+map _ Bot = Bot
 map f (AState hm) = AState (f <$> hm)
 
 instance (Eq a, BoundedLattice a) => Lattice (AState a) where
@@ -58,7 +67,7 @@ instance (Eq a, BoundedLattice a) => BoundedMeetSemiLattice (AState a) where
 instance (Eq a, WidenedLattice a) => WidenedLattice (AState a) where
   (\\//) :: (Eq a, WidenedLattice a) => AState a -> AState a -> AState a
   Bot \\// a = a
-  a \\// Bot = Bot
+  _ \\// Bot = Bot
   AState s1 \\// AState s2 = AState (HM.intersectionWith (\\//) s1 s2)
 
 {- 
@@ -71,7 +80,7 @@ update x v (AState map) =
   if v == top
     then AState (HM.delete x map)
     else AState (HM.insert x v map)
-update x v Bot = Bot
+update _ _ Bot = Bot
 
 (|->) :: (Eq a, BoundedLattice a) => AState a -> (String, a) -> AState a
 s |-> (k, v) = update k v s
@@ -79,7 +88,7 @@ s |-> (k, v) = update k v s
 {- Not found variables are interpreted as top. -}
 lookup :: (Eq a, BoundedLattice a) => String -> AState a -> a
 lookup k (AState s) = fromMaybe top (HM.lookup k s)
-lookup k Bot = bottom
+lookup _ Bot = bottom
 
 type While = Stmt
 
@@ -118,6 +127,57 @@ class (Eq a, BoundedLattice a) => AI a where
 
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
   analyze program = abstractD program top
+
+data (Show a) => InvariantLog a
+    = Leaf Stmt (AState a)
+    | List [InvariantLog a]
+    | Node BExp [InvariantLog a] [InvariantLog a]
+    | Cycl BExp [InvariantLog a]
+    deriving (Eq)  
+
+printStmts :: (Show a) => [a] -> String
+printStmts = intercalate "\n" . (show <$>)
+
+instance (Eq a, BoundedLattice a, Show a) => Show (InvariantLog a) where
+  show (Leaf st state) = show st ++ "; // " ++ show state
+  show (List xs) = printStmts xs
+  show (Node b xs ys) = "if " ++ show b ++ " then {\n" ++ printStmts xs ++ "\n} else {\n" ++ printStmts ys ++ "\n}"
+  show (Cycl b xs) = "while " ++ show b ++ " do {\n" ++ printStmts xs ++ "\n}"
+      
+
+decode :: (Show a, Show b) => (AState a -> AState b) -> InvariantLog a -> InvariantLog b
+decode f (Leaf s a) = Leaf s (f a)
+decode f (List xs) = List (decode f <$> xs)
+decode f (Node b xs ys) = Node b (decode f <$> xs) (decode f <$> ys)
+decode f (Cycl b xs) = Cycl b (decode f <$> xs)
+
+class (AI a, Show a) => LogAI a where
+  abstractDLog :: While -> (AState a, [InvariantLog a]) -> (AState a, [InvariantLog a])
+  abstractDLog (Assg x e) (s, log) =
+    let s' = abstractD (Assg x e) s
+      in (s', log ++ [Leaf (Assg x e) s'])
+  abstractDLog Skip (s, log) = (s, log ++ [Leaf Skip s])
+  abstractDLog (Cons st1 st2) (s, log) = (abstractDLog st2 . abstractDLog st1) (s, log)
+  abstractDLog (Brnc b st1 st2) (s, log) =
+    let (sTrue, sFalse) = abstractB b s
+        (sThen, logThen) = abstractDLog st1 (sTrue, [Leaf Skip sTrue])
+        (sElse, logElse) = abstractDLog st2 (sFalse, [Leaf Skip sFalse])
+        sAfter = sThen \/ sElse
+      in (sAfter, log ++ [Node b logThen logElse, Leaf Skip sAfter])
+  abstractDLog (Loop b st) (s, log) =
+      let widenedInvariant = lfp (loopIteration _F)
+          narrowedInvariant = gfpFrom widenedInvariant _F -- this refines the widened invariant 
+          -- cutting out all the states that are not a target state from some state in the invariant.
+          -- Since this domain has no infinite descending chains, the gfp always converges 
+          -- in finite time, thus there is no use for a narrowing approximation of the glb.
+          afterLoop = snd $ abstractB b narrowedInvariant
+          (_, logFromInvariant) = abstractDLog st (narrowedInvariant, []) -- the log starting from the invariant (should end into the invariant as well)
+      in (afterLoop, log ++ [Cycl b (Leaf Skip narrowedInvariant:logFromInvariant), Leaf Skip afterLoop])
+      where
+        _F = (s \/) . abstractD st . fst . abstractB b
+
+  analyzeLog :: While -> [InvariantLog a]
+  analyzeLog program = snd $ abstractDLog program (top, [])
 
 {-
 Represents a (possibly widened) iteration sequence with:

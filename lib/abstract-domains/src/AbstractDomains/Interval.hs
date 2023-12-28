@@ -9,7 +9,11 @@ import AbstractDomains.Extra
 data Interval
     = Range InfInt InfInt
     | Bot
-    deriving (Eq, Show)
+    deriving (Eq)
+  
+instance Show Interval where
+  show Bot = "[]"
+  show (Range a b) = "[" ++ show a ++ ", " ++ show b ++ "]"
 
 binop :: (InfInt -> InfInt -> InfInt) -> Interval -> Interval -> Interval
 binop _ Bot _ = Bot

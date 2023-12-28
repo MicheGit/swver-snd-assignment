@@ -9,7 +9,12 @@ data InfInt
     = Finite Integer
     | Infinity
     | NegInfinity
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show InfInt where
+  show (Finite a) = show a
+  show Infinity = "Inf"
+  show NegInfinity = "-Inf"
 
 isFinite :: InfInt -> Bool
 isFinite (Finite _) = True

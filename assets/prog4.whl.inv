@@ -1,0 +1,9 @@
+x := 5; // {"x": [5, 5]}
+if x < 10 then {
+skip; // {"x": [5, 5]}
+x := 10; // {"x": [10, 10]}
+} else {
+skip; // BOTTOM STATE
+x := 0; // BOTTOM STATE
+}
+skip; // {"x": [10, 10]}

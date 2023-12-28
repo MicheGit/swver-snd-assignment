@@ -16,7 +16,20 @@ data AExp
     | Dec String
     | PrefixInc String
     | PrefixDec String
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show AExp where
+    show (Nat n) = show n
+    show (Var x) = x
+    show (Neg a) = "(" ++ "-" ++ show a ++ ")"
+    show (Sum a b) = "(" ++ show a ++ " + " ++ show b ++ ")"
+    show (Sub a b) = "(" ++ show a ++ " - " ++ show b ++ ")"
+    show (Mul a b) = "(" ++ show a ++ " * " ++ show b ++ ")"
+    show (Div a b) = "(" ++ show a ++ " / " ++ show b ++ ")"
+    show (Inc x) = x ++ "++"
+    show (Dec x) = x ++ "--"
+    show (PrefixInc x) = "++" ++ x
+    show (PrefixDec x) = "--" ++ x
 
 -- the higher the number, the most priority it has
 -- precedence levels are from https://en.cppreference.com/w/cpp/language/operator_precedence
@@ -73,7 +86,17 @@ data BExp
     | Neq AExp AExp
     | Low AExp AExp
     | GEq AExp AExp
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show BExp where
+    show (Lit True) = "true"
+    show (Lit False) = "false"
+    show (And a b) = show a ++ " and " ++ show b
+    show (Or a b) = "(" ++ show a ++ " or " ++ show b ++ ")"
+    show (Eq a b) = show a ++ " = " ++ show b
+    show (Neq a b) = show a ++ " != " ++ show b
+    show (Low a b) = show a ++ " < " ++ show b
+    show (GEq a b) = show a ++ " >= " ++ show b 
 
 not :: BExp -> BExp
 not (Lit b) = Lit $ Prelude.not b
@@ -110,7 +133,14 @@ data Stmt
     | Cons Stmt Stmt
     | Brnc BExp Stmt Stmt
     | Loop BExp Stmt
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Stmt where
+    show (Assg x a) = x ++ " := " ++ show a
+    show Skip = "skip"
+    show (Cons a b) = show a ++ ";\n" ++ show b
+    show (Brnc g a b) = "if " ++ show g ++ " then {" ++ show a ++ "} else {" ++ show b ++ "}"
+    show (Loop b a) = "while " ++  show b ++ " do {" ++ show a ++ "}"
 
 operCons :: BinOp Stmt
 operCons = BinOp
