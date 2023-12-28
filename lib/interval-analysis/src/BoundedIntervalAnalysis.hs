@@ -7,7 +7,7 @@ import Data.Proxy
 
 import While.Language
 
-import Algebra.PartialOrd
+import Algebra.PartialOrd ( PartialOrd(leq) )
 import Algebra.Lattice
 
 import AbstractDomains.Interval
@@ -31,12 +31,15 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     where
       (m, n) = reflect (Proxy :: Proxy s)
 
-  abstractA :: (state ~ AState (BoundedInterval s r)) => AExp -> state -> (BoundedInterval s r, state)    
+  abstractA :: (state ~ AState (BoundedInterval s r)) => AExp -> state -> (BoundedInterval s r, state)
   abstractA (Nat n) s =
     let i :: Interval
         i = fromIntegral n
      in (bind i, s)
   abstractA (Var x) s = (lookup x s, s)
+  abstractA (Neg e) s =
+    let (BI a, s') = abstractA e s
+     in (bind $ -a, s')
   abstractA (Sum e1 e2) s = abstractBinOp (+) e1 e2 s
   abstractA (Sub e1 e2) s = abstractBinOp (-) e1 e2 s
   abstractA (Mul e1 e2) s = abstractBinOp (*) e1 e2 s
@@ -58,7 +61,7 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
         s' = s |-> (x, val')
      in (val', s')
 
-  
+
   abstractB :: (state ~ AState (BoundedInterval s r)) => BExp -> state -> (state, state)
   abstractB (Lit True) s = (s, bottom)
   abstractB (Lit False) s = (bottom, s)
@@ -78,7 +81,7 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | a1 /\ a2 == bottom                = (bottom, s2)
     | a1 == a2 && size (unbox a1) == 1  = (s2, bottom)
-    | otherwise                         = (s2, s2)
+    | otherwise                         = (enforceEq s2 e1 e2 a1 a2, s2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
@@ -86,42 +89,58 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | a1 /\ a2 == bottom                = (s2, bottom)
     | a1 == a2 && size (unbox a1) == 1  = (bottom, s2)
-    | otherwise                         = (s2, s2)
+    | otherwise                         = (s2, enforceEq s2 e1 e2 a1 a2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
   abstractB (Low e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | forSureLow a1 a2                  = (s2, bottom)
-    | forSureGEq a1 a2                  = (bottom, s2)
-    | otherwise                         = (s2, s2)
+    | forSureLow (unbox a1) (unbox a2)  = (s2, bottom)
+    | forSureGEq (unbox a1) (unbox a2)  = (bottom, s2)
+    | otherwise                         = (enforceLow s2 e1 e2 a1 a2, enforceGEq s2 e1 e2 a1 a2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
   abstractB (GEq e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | forSureLow a1 a2                  = (bottom, s2)
-    | forSureGEq a1 a2                  = (s2, bottom)
-    | otherwise                         = (s2, s2)
+    | forSureLow (unbox a1) (unbox a2)  = (bottom, s2)
+    | forSureGEq (unbox a1) (unbox a2)  = (s2, bottom)
+    | otherwise                         = (enforceGEq s2 e1 e2 a1 a2, enforceLow s2 e1 e2 a1 a2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
 
-forSureLow :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
-forSureLow (BI (Range _ h)) (BI (Range l _)) = h < l
-forSureGEq :: BoundedInterval s1 r1 -> BoundedInterval s2 r2 -> Bool
-forSureGEq (BI (Range l _)) (BI (Range _ h)) = l >= h
+enforceEq :: (AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
+enforceEq s2 (Var x) (Var y) a1 a2  = s2 /\ fromList [(x, a2)] /\ fromList [(y, a1)]
+enforceEq s2 _ (Var y) a1 _         = s2 /\ fromList [(y, a1)]
+enforceEq s2 (Var x) e2 _ _         = (snd . abstractA e2) (gfpFrom s2 _F)
+  where
+    -- given fixed e, A#[[e]] is monotone
+    _F s = s /\ fromList [(x, fst $ abstractA e2 s)]
+enforceEq s2 _ _ _ _ = s2
 
-{-
->>>forSureGEq (BI $ Range (Finite 1) Infinity) (BI $ Range (Finite 100) (Finite 100))
-False
--}
+enforceLow :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
+enforceLow s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeGEq` a2) |-> (y, bind $ a2 `excludeLEq` a1)
+enforceLow s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeLEq` a1)
+enforceLow s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
+  where
+    _F s = s |-> (x, bind $ a1 `excludeGEq` unbox (fst (abstractA e2 s)))
+enforceLow s2 _ _ _ _ = s2
+
+
+enforceGEq :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
+enforceGEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeLow` a2) |-> (y, bind $ a2 `excludeGrt` a1)
+enforceGEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeGrt` a1)
+enforceGEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
+  where
+    _F s = s |-> (x, bind $ a1 `excludeLow` unbox (fst (abstractA e2 s)))
+enforceGEq s2 _ _ _ _ = s2
 
 bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
 bindAnalysis bounds program = reify bounds computation
   where
   computation :: forall s. (Boundable s (InfInt, InfInt) Interval) => Proxy s -> AState Interval
-  computation reifiedBounds =
+  computation _ =
     let result :: AState (BoundedInterval s (InfInt, InfInt))
         result = analyze program
       in AbstractInterpreter.map unbox result

@@ -76,6 +76,10 @@ instance Integral InfInt where
     let (q, r) = quotRem i j
      in (Finite q, Finite r)
   quotRem (Finite a) b = (Finite 0, Finite a)
+  quotRem a (Finite b)
+    | b > 0     = (a, a)
+    | b < 0     = (-a, a)
+    | otherwise = error $ "Divided " ++ show a ++ " over " ++ show b
   quotRem a b = error $ "Divided " ++ show a ++ " over " ++ show b
 
   toInteger :: InfInt -> Integer
