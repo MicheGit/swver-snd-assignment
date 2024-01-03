@@ -54,13 +54,13 @@
     \begin{itemize}
         \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{A} \to A \times \mathbb{S}_{A}$:
         \begin{itemize}
-            \item the first element of the tuple approximates the result returned by arithmetic expression;
-            \item the second element approximates the state after the transition induced by the expression;
+            \item the first element of the tuple approximates the possible results of the arithmetic expression;
+            \item the second element approximates the possible states after the transition induced by the expression;
         \end{itemize}
         \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{A} \to (\mathbb{S}_A \times \mathbb{S}_A)$;
         \begin{itemize}
-            \item the first element of the tuple approximates the states where the boolean expression would evaluate \textbf{tt};
-            \item the second element approximates the states where the negation of the boolean expression would evaluate \textbf{tt}.
+            \item the first element of the tuple approximates the states where the boolean expression can evaluate to \textbf{tt};
+            \item the second element approximates the states where the boolean expression can evaluate \textbf{ff}.
         \end{itemize}
         %% per mantenere rappresentato lo short-circuit degli operatori logici mantenendo la definizione composizionale era necessario che la funzione B# restituisse anche lo stato in caso BExp valutasse a falso
         \item $\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to\mathbb{S}_{A}$.

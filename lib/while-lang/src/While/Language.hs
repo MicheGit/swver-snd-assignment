@@ -86,6 +86,8 @@ data BExp
     | Neq AExp AExp
     | Low AExp AExp
     | GEq AExp AExp
+    | Grt AExp AExp
+    | LEq AExp AExp
     deriving (Eq)
 
 instance Show BExp where
@@ -106,12 +108,6 @@ not (Eq e1 e2) = Neq e1 e2
 not (Neq e1 e2) = Eq e1 e2
 not (Low e1 e2) = GEq e1 e2
 not (GEq e1 e2) = Low e1 e2
-
-greaterThan :: AExp -> AExp -> BExp
-greaterThan e1 e2 = Low e2 e1
-
-lowerEqual :: AExp -> AExp -> BExp
-lowerEqual e1 e2 = GEq e2 e1
 
 operAnd :: BinOp BExp
 operAnd = BinOp

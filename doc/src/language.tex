@@ -6,21 +6,26 @@
     
     \begin{itemize}
         \item it admits some syntactic sugar (it's not minimal);
-        \item its semantic functions are modified to allow divergence and state changes in both arithmetic and boolean expressions.
+        \item its semantic functions model divergence and state changes in both arithmetic and boolean expressions.
     \end{itemize}
     
 \end{frame}
 
 \subsection{Arithmetic Expressions}
 
-\begin{frame}{Arithmetic Expressions (1)}
-
-
+\begin{frame}{Arithmetic Expressions - Syntax}
     \begin{flalign*}
         AExp ::= & n \pipe x \pipe \texttt{-}e \pipe (e)  \\
         \pipe & e_1 + e_2 \pipe e_1 - e_2 \pipe e_1 * e_2 \pipe e_1 / e_2  \\
         \pipe & x\texttt{++} \pipe \texttt{++}x \pipe x\texttt{--} \pipe \texttt{--}x 
     \end{flalign*}
+
+    The syntax allows arithmetic expression that change the state, such as \texttt{x++} and \texttt{x--}.
+
+    The operator $\mathtt{(\cdot/\cdot)}: \mathbb{N} \to \mathbb{N} \to \mathbb{N}$ returns the quotient of the two arguments. It's undefined when the second argument is $0$.
+\end{frame}
+    
+\begin{frame}{Arithmetic Expressions - Semantics (1)}
 
     \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
         \begin{flalign*}
@@ -36,7 +41,7 @@
     \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Arithmetic Expressions (2)}
+\begin{frame}{Arithmetic Expressions - Semantics (2)}
     \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
         \begin{flalign*}
             \semantics{A}{e_1 / e_2} \varphi = & \begin{cases}
@@ -55,7 +60,7 @@
 \end{frame}
 
 
-\begin{frame}{Arithmetic Expressions (3)}
+\begin{frame}{Arithmetic Expressions - Semantics (3)}
     \begin{exampleblock}{$\mathcal{A} : AExp \to State \hookrightarrow \mathbb{Z} \times State $}
         \begin{flalign*}
             \semantics{A}{x\texttt{++}} \varphi = & (\varphi(x), \varphi[x \mapsto x+1]) \\
@@ -70,28 +75,23 @@
 
 \subsection{Boolean Expressions}
 
-\begin{frame}{Boolean Expressions (1)}
+\begin{frame}{Boolean Expressions - Syntax}
     
     \begin{flalign*}
-        BExp ::= & \texttt{true} \pipe \texttt{false} \pipe (b) \pipe b_1\,\,\texttt{and}\,\,b_2 \pipe b_1\,\,\texttt{or}\,\,b_2 \\ \pipe & e_1 \texttt{ = } e_2 \pipe e_1 \texttt{ != } e_2 \pipe e_1 \texttt{ < } e_2 \pipe e_1 \texttt{ >= } e_2 
+        BExp ::= & \texttt{true} \pipe \texttt{false} \pipe (b) \pipe b_1\,\,\texttt{and}\,\,b_2 \pipe b_1\,\,\texttt{or}\,\,b_2 \\ \pipe & e_1 \texttt{ = } e_2 \pipe e_1 \texttt{ != } e_2 \pipe e_1 \texttt{ < } e_2 \pipe e_1 \texttt{ >= } e_2  \\
+        \pipe & e_1 \texttt{ > } e_2 \pipe e_1 \texttt{ <= } e_2
     \end{flalign*}
 
+    The operator $(\neg \cdot): \mathbb{T} \to \mathbb{T}$ is not in the minimal definition: it is defined as syntactic sugar later on.
+\end{frame}
+
+\begin{frame}{Boolean Expressions - Semantics (1)}
+    Operators between booleans short-circuit evaluation:
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
             \semantics{B}{\texttt{true}} \varphi = & (\mathbf{tt}, \varphi) \\
             \semantics{B}{\texttt{false}} \varphi = & (\mathbf{ff}, \varphi) \\
             \semantics{B}{(b)} \varphi = & \semantics{B}{b} \varphi\\
-        \end{flalign*}
-        
-    \end{exampleblock}
-\end{frame}
-
-\begin{frame}{Boolean Expressions (2)}
-
-    Operators between booleans short circuits results:
-
-    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
-        \begin{flalign*}
             \semantics{B}{b_1\,\,\texttt{and}\,\,b_2} \varphi = & \begin{cases}
                 (\mathbf{ff}, \varphi') & \semantics{B}{b_1} \varphi = (\mathbf{ff}, \varphi') \\
                 \semantics{B}{b_2} \varphi' & \semantics{B}{b_1} \varphi = (\mathbf{tt}, \varphi') \\
@@ -103,20 +103,22 @@
                 \uparrow & \text{otherwise}
             \end{cases}\\
         \end{flalign*}
+        
     \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Boolean Expressions (3)}
-    Comparison operations propagate updates in the state:
+\begin{frame}{Boolean Expressions - Semantics (2)}
+    Comparison operators propagate the state transition(s):
+
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
             \semantics{B}{e_1\texttt{ = }e_2} \varphi = &\begin{cases}
                 (a_1 = a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
-            \end{cases}\\\\
-            \semantics{B}{e_1\texttt{ < }e_2} \varphi = & \begin{cases}
-                (a_1 < a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+            \end{cases}\\
+            \semantics{B}{e_1\texttt{ != }e_2} \varphi = &\begin{cases}
+                (a_1 \neq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
             \end{cases}\\
@@ -125,14 +127,14 @@
 \end{frame}
 
 
-\begin{frame}{Boolean Expressions (4)}
+\begin{frame}{Boolean Expressions - Semantics (3)}
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
-            \semantics{B}{e_1\texttt{ != }e_2} \varphi = &\begin{cases}
-                (a_1 \neq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+            \semantics{B}{e_1\texttt{ < }e_2} \varphi = & \begin{cases}
+                (a_1 < a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
                 \uparrow & \text{otherwise}
-            \end{cases}\\\\
+            \end{cases}\\
             \semantics{B}{e_1\texttt{ >= }e_2} \varphi = & \begin{cases}
                 (a_1 \geq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
                 & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
@@ -142,29 +144,48 @@
     \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Boolean Expressions (5)}
-    Negation is expressed by syntactic sugar:
+\begin{frame}{Boolean Expressions - Semantics (4)}
+    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
+        \begin{flalign*}
+            \semantics{B}{e_1\texttt{ > }e_2} \varphi = &\begin{cases}
+                (a_1 > a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\\\
+            \semantics{B}{e_1\texttt{ <= }e_2} \varphi = & \begin{cases}
+                (a_1 \leq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
 
-    \begin{flalign*}
+\begin{frame}{Boolean Expressions - Syntactic Sugar}
+    \begin{alertblock}{Rule}
+        Since boolean expressions induce state transitions, the evaluation order and quantity must be preserved in the desugared code.
+    \end{alertblock}
+
+    This is the reason why we couldn't model the operators $\mathbb{(\cdot>\cdot), (\cdot\leq\cdot): \mathbb{N} \to \mathbb{N} \to \mathbb{T}}$ as syntactic sugar. There is no way to encode those operators only with $(\cdot<\cdot),(\cdot>=\cdot),(\cdot=\cdot)$ and $(\cdot!=\cdot)$ respecting this rule.
+    
+\end{frame}
+
+\begin{frame}{Boolean Expressions - Negation}
+
+    \small\begin{flalign*}
         \texttt{not}\,\,\texttt{true} &\defas \texttt{false} \\
         \texttt{not}\,\,\texttt{false} &\defas \texttt{true} \\
         \texttt{not}\,\,(b_1\,\,\texttt{and}\,\,b_2) &\defas \texttt{not}\,\,b_1\,\,\texttt{or}\,\,\texttt{not}\,\,b_2 \\
         \texttt{not}\,\,(b_1\,\,\texttt{or}\,\,b_2) &\defas \texttt{not}\,\,b_1\,\,\texttt{and}\,\,\texttt{not}\,\,b_2 \\
         \texttt{not}\,\,e_1\texttt{ = }e_2 &\defas e_1\texttt{ != }e_2 \\
-        \texttt{not}\,\,e_1\texttt{ < }e_2 &\defas e_1\texttt{ >= }e_2 \\
         \texttt{not}\,\,e_1\texttt{ != }e_2 &\defas e_1\texttt{ = }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ < }e_2 &\defas e_1\texttt{ >= }e_2 \\
         \texttt{not}\,\,e_1\texttt{ >= }e_2 &\defas e_1\texttt{ < }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ > }e_2 &\defas e_1\texttt{ <= }e_2 \\
+        \texttt{not}\,\,e_1\texttt{ <= }e_2 &\defas e_1\texttt{ > }e_2 \\
     \end{flalign*}
 \end{frame}
 
-\begin{frame}{Boolean Expressions (6)}
-    Also other arithmetic comparisons are expressed with syntactic sugar:
-
-    \begin{flalign*}
-        e_1\texttt{ > }e_2 &\defas e_2\texttt{ < }e_1 \\
-        e_1\texttt{ <= }e_2 &\defas e_2\texttt{ >= }e_1 \\
-    \end{flalign*}
-\end{frame}
 
 \begin{frame}{Statements (1)}
     \begin{flalign*}
