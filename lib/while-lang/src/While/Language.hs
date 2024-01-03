@@ -108,6 +108,8 @@ not (Eq e1 e2) = Neq e1 e2
 not (Neq e1 e2) = Eq e1 e2
 not (Low e1 e2) = GEq e1 e2
 not (GEq e1 e2) = Low e1 e2
+not (Grt e1 e2) = LEq e1 e2
+not (LEq e1 e2) = Grt e1 e2
 
 operAnd :: BinOp BExp
 operAnd = BinOp

@@ -6,7 +6,7 @@
     We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_{A} = Map(Var, A)$.
     
     \begin{alertblock}{Assumption}
-        The absence of a variable in the abstract state is interpreted as $\top_{A}$. This is due to the fact that we assume that all referenced variables in the program are initialized.
+        When a variable is used before its definition, then its value is assumed to be ``unknown'' ($\top_{A}$). This is due to the fact that we assume that all referenced variables in the program are initialized.
         %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
     \end{alertblock}
 \end{frame}
@@ -33,7 +33,7 @@
 
 \begin{frame}{Abstract States (3)}
     \begin{exampleblock}{$\mathbb{S}_{A}$ is partially ordered}
-        \[ s_1 \leq s_2 \iff s_1(x) \leq s_2(x)\,\,\forall x \in Var \]
+        \[ s_1 \leq_{\mathbb{S}_A} s_2 \iff s_1(x) \leq_A s_2(x)\,\,\forall x \in Var \]
     \end{exampleblock}
 
     \begin{exampleblock}{$\mathbb{S}_{A}$ is a complete lattice}
@@ -47,9 +47,9 @@
     \end{exampleblock} 
 \end{frame}
 
-\subsection{Abstract Semantics of Statements}
+\subsection{Abstract Semantics}
 
-\begin{frame}{Abstract Semantics of Statements (1)}
+\begin{frame}{Abstract Semantics}
     The abstract semantic functions are:
     \begin{itemize}
         \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{A} \to A \times \mathbb{S}_{A}$:
@@ -57,7 +57,7 @@
             \item the first element of the tuple approximates the possible results of the arithmetic expression;
             \item the second element approximates the possible states after the transition induced by the expression;
         \end{itemize}
-        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{A} \to (\mathbb{S}_A \times \mathbb{S}_A)$;
+        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{A} \to \mathbb{S}_A \times \mathbb{S}_A$;
         \begin{itemize}
             \item the first element of the tuple approximates the states where the boolean expression can evaluate to \textbf{tt};
             \item the second element approximates the states where the boolean expression can evaluate \textbf{ff}.
@@ -67,17 +67,28 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Abstract Semantics of Statements (2)}
+\begin{frame}{Abstract Semantics - Statements (1)}
     \begin{exampleblock}{$\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
         
         \begin{flalign*}
-            \asem{D}{\text{x := e}} s^{\sharp} & \defas
+            \asem{D}{x\texttt{ := }e} s^{\sharp} & \defas
             \begin{cases}
                 s'^\sharp [x \mapsto a] & (a, s'^\sharp) = \asem{A}{e} s^\sharp\\ 
                 & \land a \neq \bot_A \\
                 \bot_{\mathbb{S}_{A}} & otherwise
-            \end{cases}
+            \end{cases}\\
+            \asem{D}{\texttt{skip}} s^{\sharp} & \defas s^{\sharp} \\
+            \asem{D}{S_1\texttt{ ; }S_2} s^{\sharp} & \defas (\asem{D}{S_1} \circ \asem{D}{S_2}) s^{\sharp}
         \end{flalign*}
     \end{exampleblock}
-    
+\end{frame}
+
+\begin{frame}{Abstract Semantics - Statements (2)}
+    \begin{exampleblock}{$\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
+        
+        \begin{flalign*}
+            \asem{D}{\texttt{if }b\texttt{ then }S_1\texttt{ else }S_2} s^{\sharp} & \defas \\
+            \asem{D}{\texttt{while }b\texttt{ do }S} s^{\sharp} & \defas 
+        \end{flalign*}
+    \end{exampleblock}
 \end{frame}

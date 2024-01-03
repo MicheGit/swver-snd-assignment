@@ -187,11 +187,14 @@
 \end{frame}
 
 
-\begin{frame}{Statements (1)}
+\begin{frame}{Statements - Syntax}
     \begin{flalign*}
         \mathbf{While} ::= &\,\,x\texttt{ := }e \pipe \texttt{ skip } \pipe \{S\} \pipe S_1\texttt{ ; }S_2 \\ 
         \pipe & \texttt{ if }b\texttt{ then }S_1\texttt{ else }S_2 \pipe \texttt{ while }b\texttt{ do }S 
     \end{flalign*}
+\end{frame}
+
+\begin{frame}{Statements - Semantics (1)}
 
     \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
         \begin{flalign*}
@@ -206,7 +209,7 @@
     \end{exampleblock}
 \end{frame}
 
-\begin{frame}{Statements (2)}
+\begin{frame}{Statements - Semantics (2)}
     \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
         \begin{flalign*}
             \semantics[ds]{S}{S_1\,\texttt{;}\,S_2} \varphi = & (\semantics[ds]{S}{S_2} \circ \semantics[ds]{S}{S_1}) \varphi \\

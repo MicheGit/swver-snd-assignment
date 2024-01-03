@@ -85,14 +85,9 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
-  abstractB (Neq e1 e2) s
-    | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | a1 /\ a2 == bottom                = (s2, bottom)
-    | a1 == a2 && size (unbox a1) == 1  = (bottom, s2)
-    | otherwise                         = (s2, enforceEq s2 e1 e2 a1 a2)
-    where
-      (a1, s1) = abstractA e1 s
-      (a2, s2) = abstractA e2 s1
+  abstractB (Neq e1 e2) s =
+    let (sEq, sNeq) = abstractB (Eq e1 e2) s
+     in (sNeq, sEq)
   abstractB (Low e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | forSureLow (unbox a1) (unbox a2)  = (s2, bottom)
@@ -101,14 +96,20 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
-  abstractB (GEq e1 e2) s
+  abstractB (GEq e1 e2) s =
+    let (sLow, sGEq) = abstractB (Low e1 e2) s
+     in (sGEq, sLow)
+  abstractB (Grt e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | forSureLow (unbox a1) (unbox a2)  = (bottom, s2)
-    | forSureGEq (unbox a1) (unbox a2)  = (s2, bottom)
-    | otherwise                         = (enforceGEq s2 e1 e2 a1 a2, enforceLow s2 e1 e2 a1 a2)
+    | forSureGrt (unbox a1) (unbox a2)  = (s2, bottom)
+    | forSureLEq (unbox a1) (unbox a2)  = (bottom, s2)
+    | otherwise                         = (enforceGrt s2 e1 e2 a1 a2, enforceLEq s2 e1 e2 a1 a2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
+  abstractB (LEq e1 e2) s =
+    let (sGrt, sLEq) = abstractB (Grt e1 e2) s
+     in (sLEq, sGrt) 
 
 enforceEq :: (AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
 enforceEq s2 (Var x) (Var y) a1 a2  = s2 /\ fromList [(x, a2)] /\ fromList [(y, a1)]
@@ -127,6 +128,13 @@ enforceLow s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2
     _F s = s |-> (x, bind $ a1 `excludeGEq` unbox (fst (abstractA e2 s)))
 enforceLow s2 _ _ _ _ = s2
 
+enforceGrt :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
+enforceGrt s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeLEq` a2) |-> (y, bind $ a2 `excludeGEq` a1)
+enforceGrt s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeGEq` a1)
+enforceGrt s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
+  where
+    _F s = s |-> (x, bind $ a1 `excludeLEq` unbox (fst (abstractA e2 s)))
+enforceGrt s2 _ _ _ _ = s2
 
 enforceGEq :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
 enforceGEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeLow` a2) |-> (y, bind $ a2 `excludeGrt` a1)
@@ -135,6 +143,14 @@ enforceGEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2
   where
     _F s = s |-> (x, bind $ a1 `excludeLow` unbox (fst (abstractA e2 s)))
 enforceGEq s2 _ _ _ _ = s2
+
+enforceLEq :: Reifies s1 (InfInt, InfInt) => AState (BoundedInterval s1 (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s2 r1 -> BoundedInterval s3 r2 -> AState (BoundedInterval s1 (InfInt, InfInt))
+enforceLEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeGrt` a2) |-> (y, bind $ a2 `excludeLow` a1)
+enforceLEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeLow` a1)
+enforceLEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
+  where
+    _F s = s |-> (x, bind $ a1 `excludeGrt` unbox (fst (abstractA e2 s)))
+enforceLEq s2 _ _ _ _ = s2
 
 bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
 bindAnalysis bounds program = reify bounds computation

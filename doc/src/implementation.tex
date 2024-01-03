@@ -1,8 +1,8 @@
 \section{Implementation}
 
-\subsection{The Interval Domain}
+\subsection{The Bounded Intervals Domain}
 
-\begin{frame}{The Interval Domain (1)}
+\begin{frame}{Bounded Intervals - Definition}
     \[ I_{m,n} \subset \wp(\mathbb{Z})\text{ with }m,n\in\mathbb{Z}\cup{-\infty, \infty}\]
     \begin{flalign*}
         I_{m,n} & = \{ \mathbb{Z}, \emptyset \} \cup \{ \{ z \} \pipe z \in \mathbb{Z} \} \\
@@ -12,7 +12,7 @@
     \end{flalign*}
 \end{frame}
 
-\begin{frame}{The Interval Domain (2)}
+\begin{frame}{Bounded Intervals - Properties (1)}
 
     \begin{exampleblock}{$I_{m,n}$ is partially ordered}
         \[ i_1 \leq i_2 \iff i_1 \subseteq i_2 \]
@@ -26,4 +26,20 @@
             \land_{I_{m,n}} &= \cap
         \end{flalign*}
     \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Bounded Intervals - Properties (2)}
+    \begin{itemize}
+        \item $I_{m,n}$ has no infinite ascending chains when $m \neq -\infty \land n \neq \infty$:
+        \begin{itemize}
+            \item when $m,n\in \mathbb{N}$ the fixed-point iteration sequence induced by $\mathcal{D}^{\#}\llbracket S_1 \rrbracket$ converges in finite time;
+            \item otherwise, we must make use of the widening operator $\nabla: \mathbb{S}_A \to \mathbb{S}_A \to\mathbb{S}_A$ in order to enforce convergence. 
+        \end{itemize}
+        \item $I_{m,n}$ has no infinite descending chains:
+        \begin{itemize}
+            \item any descending greatest fixed-point search converges in finite time;
+            \item there is no need for a narrowing operator $\Delta: \mathbb{S}_A \to \mathbb{S}_A \to\mathbb{S}_A$.
+        \end{itemize}
+    \end{itemize}
+    
 \end{frame}

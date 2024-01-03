@@ -124,3 +124,9 @@ forSureLow _ _ = False
 forSureGEq :: Interval -> Interval -> Bool
 forSureGEq (Range l _) (Range _ h) = l >= h
 forSureGEq _ _ = False
+
+forSureGrt :: Interval -> Interval -> Bool
+forSureGrt a1 a2 = forSureLow a2 a1
+
+forSureLEq :: Interval -> Interval -> Bool
+forSureLEq a1 a2 = forSureGEq a2 a1
