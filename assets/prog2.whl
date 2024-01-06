@@ -1,6 +1,2 @@
-x := 0;
-y := 40;
-while x < 10 do{
-    x := x + 1;
-    y := y-1
-}
+if y < 0 then x := -20 else x := 20;
+if x > x / 2 then y := x else y := 1

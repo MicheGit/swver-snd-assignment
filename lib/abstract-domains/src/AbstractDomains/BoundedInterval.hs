@@ -58,3 +58,18 @@ instance BoundedJoinSemiLattice (BoundedInterval s r) where
 instance WidenedLattice (BoundedInterval s r) where
   (\\//) :: BoundedInterval s r -> BoundedInterval s r -> BoundedInterval s r
   (BI i) \\// (BI j) = BI (i \\// j)
+
+unboxBinop :: Boundable s r Interval => (Interval -> Interval -> a) -> BoundedInterval s r -> BoundedInterval s r -> a
+unboxBinop binop (BI a) (BI b) = a `binop` b
+
+rebind :: (Boundable s r Interval) => (Interval -> Interval -> Interval) -> BoundedInterval s r -> BoundedInterval s r -> BoundedInterval s r
+rebind binop a b = bind (unboxBinop binop a b)
+
+instance (Boundable s r Interval) => PartialCmp (BoundedInterval s r) where
+  minusLow = rebind minusLow
+  minusGrt = rebind minusGrt
+  minusLEq = rebind minusLEq
+  minusGEq = rebind minusGEq
+  forSureLow = unboxBinop forSureLow
+  forSureGEq = unboxBinop forSureGEq
+  

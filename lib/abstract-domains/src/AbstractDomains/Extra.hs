@@ -9,3 +9,15 @@ instance (Eq a, Lattice a) => PartialOrd a where
 
 class (BoundedLattice a) => WidenedLattice a where
     (\\//) :: a -> a -> a
+
+class PartialCmp a where
+  minusLow :: a -> a -> a
+  minusGrt :: a -> a -> a
+  minusLEq :: a -> a -> a
+  minusGEq :: a -> a -> a
+  forSureLow :: a -> a -> Bool
+  forSureGEq :: a -> a -> Bool
+  forSureGrt :: a -> a -> Bool
+  forSureGrt a1 a2 = forSureLow a2 a1
+  forSureLEq :: a -> a -> Bool
+  forSureLEq a1 a2 = forSureGEq a2 a1

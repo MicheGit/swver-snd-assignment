@@ -81,10 +81,11 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | a1 /\ a2 == bottom                = (bottom, s2)
     | a1 == a2 && size (unbox a1) == 1  = (s2, bottom)
-    | otherwise                         = (enforceEq s2 e1 e2 a1 a2, s2)
+    | otherwise                         = (applyTransitions (enforceEq s e1 e2), applyTransitions s)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
+      applyTransitions = snd . abstractA e2 . snd . abstractA e1
   abstractB (Neq e1 e2) s =
     let (sEq, sNeq) = abstractB (Eq e1 e2) s
      in (sNeq, sEq)
@@ -92,10 +93,11 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | forSureLow (unbox a1) (unbox a2)  = (s2, bottom)
     | forSureGEq (unbox a1) (unbox a2)  = (bottom, s2)
-    | otherwise                         = (enforceLow s2 e1 e2 a1 a2, enforceGEq s2 e1 e2 a1 a2)
+    | otherwise                         = (applyTransitions $ enforceLow s e1 e2, applyTransitions $ enforceGEq s e1 e2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
+      applyTransitions = snd . abstractA e2 . snd . abstractA e1
   abstractB (GEq e1 e2) s =
     let (sLow, sGEq) = abstractB (Low e1 e2) s
      in (sGEq, sLow)
@@ -103,58 +105,61 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | forSureGrt (unbox a1) (unbox a2)  = (s2, bottom)
     | forSureLEq (unbox a1) (unbox a2)  = (bottom, s2)
-    | otherwise                         = (enforceGrt s2 e1 e2 a1 a2, enforceLEq s2 e1 e2 a1 a2)
+    | otherwise                         = (applyTransitions $ enforceGrt s2 e1 e2, applyTransitions $ enforceLEq s2 e1 e2)
     where
       (a1, s1) = abstractA e1 s
       (a2, s2) = abstractA e2 s1
+      applyTransitions = snd . abstractA e2 . snd . abstractA e1
   abstractB (LEq e1 e2) s =
     let (sGrt, sLEq) = abstractB (Grt e1 e2) s
-     in (sLEq, sGrt) 
-
-enforceEq :: (AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceEq s2 e1 e2 a1 a2 = (snd . abstractA e2 . snd . abstractA e1) (gfpFrom s2 _F)
+     in (sLEq, sGrt)
+{-
+Given
+- binopLeft and binopRight, two (descending monotone wrt their first parameter) binary operators
+- a state s
+- two arithmetic expressions e1 e2
+then induceCmp will return a state s# s.t.:
+- s# <= s
+- if e1=Var x, then s#(x) is the gfp of (`binopLeft` e2) starting from s(x)
+- if e2=Var y, then s#(y) is the gfp of (`binopRight` e1) starting from s(y)
+-}
+induceCmp :: AI t => (t -> t -> t) -> (t -> t -> t) -> AState t -> AExp -> AExp -> AState t
+induceCmp binopLeft binopRight s e1 e2 = gfpFrom s f
   where
-    _F s = 
-      let refine1 = case e1 of
-              (Var x) -> fromList [(x, fst $ abstractA e2 s)]
+    f s' =
+      let (ax, s'') = abstractA e1 s'
+          (ay, _  ) = abstractA e2 s''
+          refine1 = case e1 of
+              (Var x) -> fromList [(x, ax `binopLeft` ay)]
               _ -> top
-          refine2 = case e1 of
-              (Var y) -> fromList [(y, fst $ abstractA e1 s)]
+          refine2 = case e2 of
+              (Var y) -> fromList [(y, ay `binopRight` ax)]
               _ -> top
-       in s /\ refine1 /\ refine2
+       in s' /\ refine1 /\ refine2
 
+{-
+Example 1. Consider s# the result of enforceEq s e1 e2. Then
+- s# <= s
+- if e1=Var x, then s#(x) is the gfp of (/\ e2) starting from s(x)
+- if e2=Var y, then s#(y) is the gfp of (/\ e1) starting from s(y)
 
-enforceLow :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceLow s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusGEq` a2) |-> (y, bind $ a2 `minusLEq` a1)
-enforceLow s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusLEq` a1)
-enforceLow s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
-  where
-    _F s = s |-> (x, bind $ a1 `minusGEq` unbox (fst (abstractA e2 s)))
-enforceLow s2 _ _ _ _ = s2
+Therefore, s#(x) is the smallest value included in s(x) s.t. could equal A#[[e2]] s' (with s' the state after the transition induced by A#[[e1]]).
+Similarly, s#(y) is the smallest value included in s(y) s.t. could equal A#[[e1]] s.
+-}
+enforceEq :: (AI a) => AState a -> AExp -> AExp -> AState a
+enforceEq = induceCmp (/\) (/\)
 
-enforceGrt :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceGrt s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusLEq` a2) |-> (y, bind $ a2 `minusGEq` a1)
-enforceGrt s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusGEq` a1)
-enforceGrt s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
-  where
-    _F s = s |-> (x, bind $ a1 `minusLEq` unbox (fst (abstractA e2 s)))
-enforceGrt s2 _ _ _ _ = s2
+enforceLow :: (AI a, PartialCmp a) => AState a -> AExp -> AExp -> AState a
+enforceLow = induceCmp minusGEq minusLEq
 
-enforceGEq :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceGEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusLow` a2) |-> (y, bind $ a2 `minusGrt` a1)
-enforceGEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusGrt` a1)
-enforceGEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
-  where
-    _F s = s |-> (x, bind $ a1 `minusLow` unbox (fst (abstractA e2 s)))
-enforceGEq s2 _ _ _ _ = s2
+enforceGrt :: (AI a, PartialCmp a) => AState a -> AExp -> AExp -> AState a
+enforceGrt = induceCmp minusLEq minusGEq
 
-enforceLEq :: Reifies s1 (InfInt, InfInt) => AState (BoundedInterval s1 (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s2 r1 -> BoundedInterval s3 r2 -> AState (BoundedInterval s1 (InfInt, InfInt))
-enforceLEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusGrt` a2) |-> (y, bind $ a2 `minusLow` a1)
-enforceLEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusLow` a1)
-enforceLEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
-  where
-    _F s = s |-> (x, bind $ a1 `minusGrt` unbox (fst (abstractA e2 s)))
-enforceLEq s2 _ _ _ _ = s2
+enforceGEq :: (AI a, PartialCmp a) => AState a -> AExp -> AExp -> AState a
+enforceGEq = induceCmp minusLow minusGrt
+
+enforceLEq :: (AI a, PartialCmp a) => AState a -> AExp -> AExp -> AState a
+enforceLEq = induceCmp minusGrt minusLow
 
 bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval
 bindAnalysis bounds program = reify bounds computation
@@ -165,7 +170,7 @@ bindAnalysis bounds program = reify bounds computation
         result = analyze program
       in AbstractInterpreter.map unbox result
 
-instance (r ~ (InfInt, InfInt), Reifies s r) => LogAI (BoundedInterval s r) 
+instance (r ~ (InfInt, InfInt), Reifies s r) => LogAI (BoundedInterval s r)
 
 bindAnalysisLog :: (InfInt, InfInt) -> While -> InvariantLog Interval
 bindAnalysisLog bounds program = reify bounds computation

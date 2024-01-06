@@ -5,5 +5,5 @@ x := 10; // {"x": [10, 10]}
 } else {
 skip; // BOTTOM STATE
 x := 0; // BOTTOM STATE
-}
+};
 skip; // {"x": [10, 10]}

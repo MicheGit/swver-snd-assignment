@@ -3,5 +3,5 @@ skip; // {"x": [1, Inf]}
 while x++ <= 100 do {
 skip; // {"x": [2, Inf]}
 skip; // {"x": [2, Inf]}
-}
+};
 skip; // {"x": [2, Inf]}

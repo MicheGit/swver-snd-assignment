@@ -100,33 +100,28 @@ instance WidenedLattice Interval where
       (if l1 <= l2 then l1 else -Infinity)
       (if h1 >= h2 then h1 else Infinity)
 
--- excludes the values in first argument that are for sure lower than the second argument
-minusLow :: Interval -> Interval -> Interval
-minusLow (Range l1 h1) (Range l2 _) = Range (max l1 l2) h1
-minusLow _ _ = bottom
+instance PartialCmp Interval where
+  -- excludes the values in first argument that are for sure lower than the second argument
+  minusLow :: Interval -> Interval -> Interval
+  minusLow (Range l1 h1) (Range l2 _) = Range (max l1 l2) h1
+  minusLow _ _ = bottom
 
-minusGrt :: Interval -> Interval -> Interval
-minusGrt (Range l1 h1) (Range _ h2) = Range l1 (min h1 h2)
-minusGrt _ _ = bottom
+  minusGrt :: Interval -> Interval -> Interval
+  minusGrt (Range l1 h1) (Range _ h2) = Range l1 (min h1 h2)
+  minusGrt _ _ = bottom
 
-minusLEq :: Interval -> Interval -> Interval
-minusLEq (Range l1 h1) (Range l2 _) = Range (max l1 (l2 + 1)) h1
-minusLEq _ _ = bottom
+  minusLEq :: Interval -> Interval -> Interval
+  minusLEq (Range l1 h1) (Range l2 _) = Range (max l1 (l2 + 1)) h1
+  minusLEq _ _ = bottom
 
-minusGEq :: Interval -> Interval -> Interval
-minusGEq (Range l1 h1) (Range _ h2) = Range l1 (min h1 (h2 - 1))
-minusGEq _ _ = bottom
+  minusGEq :: Interval -> Interval -> Interval
+  minusGEq (Range l1 h1) (Range _ h2) = Range l1 (min h1 (h2 - 1))
+  minusGEq _ _ = bottom
 
-forSureLow :: Interval -> Interval -> Bool
-forSureLow (Range _ h) (Range l _) = h < l
-forSureLow _ _ = False
+  forSureLow :: Interval -> Interval -> Bool
+  forSureLow (Range _ h) (Range l _) = h < l
+  forSureLow _ _ = False
 
-forSureGEq :: Interval -> Interval -> Bool
-forSureGEq (Range l _) (Range _ h) = l >= h
-forSureGEq _ _ = False
-
-forSureGrt :: Interval -> Interval -> Bool
-forSureGrt a1 a2 = forSureLow a2 a1
-
-forSureLEq :: Interval -> Interval -> Bool
-forSureLEq a1 a2 = forSureGEq a2 a1
+  forSureGEq :: Interval -> Interval -> Bool
+  forSureGEq (Range l _) (Range _ h) = l >= h
+  forSureGEq _ _ = False
