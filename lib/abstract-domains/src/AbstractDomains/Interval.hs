@@ -101,21 +101,21 @@ instance WidenedLattice Interval where
       (if h1 >= h2 then h1 else Infinity)
 
 -- excludes the values in first argument that are for sure lower than the second argument
-excludeLow :: Interval -> Interval -> Interval
-excludeLow (Range l1 h1) (Range l2 _) = Range (max l1 l2) h1
-excludeLow _ _ = bottom
+minusLow :: Interval -> Interval -> Interval
+minusLow (Range l1 h1) (Range l2 _) = Range (max l1 l2) h1
+minusLow _ _ = bottom
 
-excludeGrt :: Interval -> Interval -> Interval
-excludeGrt (Range l1 h1) (Range _ h2) = Range l1 (min h1 h2)
-excludeGrt _ _ = bottom
+minusGrt :: Interval -> Interval -> Interval
+minusGrt (Range l1 h1) (Range _ h2) = Range l1 (min h1 h2)
+minusGrt _ _ = bottom
 
-excludeLEq :: Interval -> Interval -> Interval
-excludeLEq (Range l1 h1) (Range l2 _) = Range (max l1 (l2 + 1)) h1
-excludeLEq _ _ = bottom
+minusLEq :: Interval -> Interval -> Interval
+minusLEq (Range l1 h1) (Range l2 _) = Range (max l1 (l2 + 1)) h1
+minusLEq _ _ = bottom
 
-excludeGEq :: Interval -> Interval -> Interval
-excludeGEq (Range l1 h1) (Range _ h2) = Range l1 (min h1 (h2 - 1))
-excludeGEq _ _ = bottom
+minusGEq :: Interval -> Interval -> Interval
+minusGEq (Range l1 h1) (Range _ h2) = Range l1 (min h1 (h2 - 1))
+minusGEq _ _ = bottom
 
 forSureLow :: Interval -> Interval -> Bool
 forSureLow (Range _ h) (Range l _) = h < l

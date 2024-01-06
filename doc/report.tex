@@ -12,6 +12,31 @@
 \usepackage{amssymb}
 \usepackage{mathrsfs}
 
+% listings
+\usepackage{listings}
+\lstdefinelanguage{whilelang}
+{
+  % list of keywords
+  basicstyle=\ttfamily,
+  morekeywords={
+    skip,
+    if,
+	then,
+	else,
+    while,
+    do,
+	true,
+	false,
+	and,
+	or
+  },
+  sensitive=true, % keywords are not case-sensitive
+  morecomment=[l]{//}, % l is for line comment
+  morecomment=[s]{/*}{*/}, % s is for start and end delimiter
+  morestring=[b]", % defines that strings are enclosed in double quotes
+  keywordstyle={\color{purple}\bfseries}
+}
+
 % simboli
 \usepackage{textcomp}
 \usepackage{upgreek}

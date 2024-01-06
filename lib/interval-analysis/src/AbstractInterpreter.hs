@@ -114,7 +114,7 @@ class (Eq a, BoundedLattice a) => AI a where
     let (sthen, selse) = abstractB b s
      in abstractD st1 sthen \/ abstractD st2 selse
   abstractD (Loop b st) s =
-    let widenedInvariant = lfp (loopIteration _F)
+    let widenedInvariant = unsafeLfp (loopIteration _F)
         narrowedInvariant = gfpFrom widenedInvariant _F -- this refines the widened invariant 
         -- cutting out all the states that are not a target state from some state in the invariant.
         -- Since this domain has no infinite descending chains, the gfp always converges 
@@ -122,7 +122,7 @@ class (Eq a, BoundedLattice a) => AI a where
      in snd $ abstractB b narrowedInvariant
     where
       _F = (s \/) . abstractD st . fst . abstractB b
-      --                           ^^^
+      --                  ^^^
       -- fst takes the states where b can be true
 
   analyze :: While -> AState a -- \times Log = [String] (opzionale)
@@ -141,8 +141,8 @@ printStmts = intercalate "\n" . (show <$>)
 instance (Eq a, BoundedLattice a, Show a) => Show (InvariantLog a) where
   show (Leaf st state) = show st ++ "; // " ++ show state
   show (List xs) = printStmts xs
-  show (Node b xs ys) = "if " ++ show b ++ " then {\n" ++ printStmts xs ++ "\n} else {\n" ++ printStmts ys ++ "\n}"
-  show (Cycl b xs) = "while " ++ show b ++ " do {\n" ++ printStmts xs ++ "\n}"
+  show (Node b xs ys) = "if " ++ show b ++ " then {\n" ++ printStmts xs ++ "\n} else {\n" ++ printStmts ys ++ "\n};"
+  show (Cycl b xs) = "while " ++ show b ++ " do {\n" ++ printStmts xs ++ "\n};"
       
 
 decode :: (Show a, Show b) => (AState a -> AState b) -> InvariantLog a -> InvariantLog b
@@ -165,14 +165,14 @@ class (AI a, Show a) => LogAI a where
         sAfter = sThen \/ sElse
       in (sAfter, log ++ [Node b logThen logElse, Leaf Skip sAfter])
   abstractDLog (Loop b st) (s, log) =
-      let widenedInvariant = lfp (loopIteration _F)
+      let widenedInvariant = unsafeLfp (loopIteration _F)
           narrowedInvariant = gfpFrom widenedInvariant _F -- this refines the widened invariant 
           -- cutting out all the states that are not a target state from some state in the invariant.
           -- Since this domain has no infinite descending chains, the gfp always converges 
           -- in finite time, thus there is no use for a narrowing approximation of the glb.
-          afterLoop = snd $ abstractB b narrowedInvariant
-          (_, logFromInvariant) = abstractDLog st (narrowedInvariant, []) -- the log starting from the invariant (should end into the invariant as well)
-      in (afterLoop, log ++ [Cycl b (Leaf Skip narrowedInvariant:logFromInvariant), Leaf Skip afterLoop])
+          (enterLoop, afterLoop) = abstractB b narrowedInvariant
+          (_, logFromInvariant) = abstractDLog st (enterLoop, []) -- the log starting from the invariant (should end into the invariant as well)
+      in (afterLoop, log ++ [Leaf Skip narrowedInvariant, Cycl b (Leaf Skip enterLoop:logFromInvariant), Leaf Skip afterLoop])
       where
         _F = (s \/) . abstractD st . fst . abstractB b
 

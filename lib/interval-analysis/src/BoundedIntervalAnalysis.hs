@@ -112,44 +112,48 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
      in (sLEq, sGrt) 
 
 enforceEq :: (AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceEq s2 (Var x) (Var y) a1 a2  = s2 /\ fromList [(x, a2)] /\ fromList [(y, a1)]
-enforceEq s2 _ (Var y) a1 _         = s2 /\ fromList [(y, a1)]
-enforceEq s2 (Var x) e2 _ _         = (snd . abstractA e2) (gfpFrom s2 _F)
+enforceEq s2 e1 e2 a1 a2 = (snd . abstractA e2 . snd . abstractA e1) (gfpFrom s2 _F)
   where
-    -- given fixed e, A#[[e]] is monotone
-    _F s = s /\ fromList [(x, fst $ abstractA e2 s)]
-enforceEq s2 _ _ _ _ = s2
+    _F s = 
+      let refine1 = case e1 of
+              (Var x) -> fromList [(x, fst $ abstractA e2 s)]
+              _ -> top
+          refine2 = case e1 of
+              (Var y) -> fromList [(y, fst $ abstractA e1 s)]
+              _ -> top
+       in s /\ refine1 /\ refine2
+
 
 enforceLow :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceLow s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeGEq` a2) |-> (y, bind $ a2 `excludeLEq` a1)
-enforceLow s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeLEq` a1)
+enforceLow s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusGEq` a2) |-> (y, bind $ a2 `minusLEq` a1)
+enforceLow s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusLEq` a1)
 enforceLow s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
   where
-    _F s = s |-> (x, bind $ a1 `excludeGEq` unbox (fst (abstractA e2 s)))
+    _F s = s |-> (x, bind $ a1 `minusGEq` unbox (fst (abstractA e2 s)))
 enforceLow s2 _ _ _ _ = s2
 
 enforceGrt :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceGrt s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeLEq` a2) |-> (y, bind $ a2 `excludeGEq` a1)
-enforceGrt s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeGEq` a1)
+enforceGrt s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusLEq` a2) |-> (y, bind $ a2 `minusGEq` a1)
+enforceGrt s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusGEq` a1)
 enforceGrt s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
   where
-    _F s = s |-> (x, bind $ a1 `excludeLEq` unbox (fst (abstractA e2 s)))
+    _F s = s |-> (x, bind $ a1 `minusLEq` unbox (fst (abstractA e2 s)))
 enforceGrt s2 _ _ _ _ = s2
 
 enforceGEq :: (Reifies s (InfInt, InfInt), AI (BoundedInterval s (InfInt, InfInt))) => AState (BoundedInterval s (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s (InfInt, InfInt) -> BoundedInterval s (InfInt, InfInt) -> AState (BoundedInterval s (InfInt, InfInt))
-enforceGEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeLow` a2) |-> (y, bind $ a2 `excludeGrt` a1)
-enforceGEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeGrt` a1)
+enforceGEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusLow` a2) |-> (y, bind $ a2 `minusGrt` a1)
+enforceGEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusGrt` a1)
 enforceGEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
   where
-    _F s = s |-> (x, bind $ a1 `excludeLow` unbox (fst (abstractA e2 s)))
+    _F s = s |-> (x, bind $ a1 `minusLow` unbox (fst (abstractA e2 s)))
 enforceGEq s2 _ _ _ _ = s2
 
 enforceLEq :: Reifies s1 (InfInt, InfInt) => AState (BoundedInterval s1 (InfInt, InfInt)) -> AExp -> AExp -> BoundedInterval s2 r1 -> BoundedInterval s3 r2 -> AState (BoundedInterval s1 (InfInt, InfInt))
-enforceLEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `excludeGrt` a2) |-> (y, bind $ a2 `excludeLow` a1)
-enforceLEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `excludeLow` a1)
+enforceLEq s2 (Var x) (Var y) (BI a1) (BI a2) = s2 |-> (x, bind $ a1 `minusGrt` a2) |-> (y, bind $ a2 `minusLow` a1)
+enforceLEq s2 _ (Var y) (BI a1) (BI a2)       = s2 |-> (y, bind $ a2 `minusLow` a1)
 enforceLEq s2 (Var x) e2 (BI a1) _            = (snd . abstractA e2) (gfpFrom s2 _F)
   where
-    _F s = s |-> (x, bind $ a1 `excludeGrt` unbox (fst (abstractA e2 s)))
+    _F s = s |-> (x, bind $ a1 `minusGrt` unbox (fst (abstractA e2 s)))
 enforceLEq s2 _ _ _ _ = s2
 
 bindAnalysis :: (InfInt, InfInt) -> While -> AState Interval

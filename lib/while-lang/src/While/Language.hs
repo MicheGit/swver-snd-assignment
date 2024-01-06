@@ -99,6 +99,8 @@ instance Show BExp where
     show (Neq a b) = show a ++ " != " ++ show b
     show (Low a b) = show a ++ " < " ++ show b
     show (GEq a b) = show a ++ " >= " ++ show b 
+    show (Grt a b) = show a ++ " > " ++ show b
+    show (LEq a b) = show a ++ " <= " ++ show b
 
 not :: BExp -> BExp
 not (Lit b) = Lit $ Prelude.not b

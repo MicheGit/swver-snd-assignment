@@ -1,0 +1,8 @@
+x := 10; // {"x": [10, 10]}
+skip; // {"x": [10, Inf]}
+while x > 0 do {
+skip; // {"x": [10, Inf]}
+x := (x + 1); // {"x": [11, Inf]}
+};
+skip; // BOTTOM STATE
+y := 0; // BOTTOM STATE

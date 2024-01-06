@@ -62,6 +62,7 @@
             \item the first element of the tuple approximates the states where the boolean expression can evaluate to \textbf{tt};
             \item the second element approximates the states where the boolean expression can evaluate \textbf{ff}.
         \end{itemize}
+        This function returns two states, instead of one, in order to preserve the short circuit behavior of boolean operators along with a compositional definition.
         %% per mantenere rappresentato lo short-circuit degli operatori logici mantenendo la definizione composizionale era necessario che la funzione B# restituisse anche lo stato in caso BExp valutasse a falso
         \item $\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to\mathbb{S}_{A}$.
     \end{itemize}
@@ -86,9 +87,15 @@
 \begin{frame}{Abstract Semantics - Statements (2)}
     \begin{exampleblock}{$\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
         
-        \begin{flalign*}
-            \asem{D}{\texttt{if }b\texttt{ then }S_1\texttt{ else }S_2} s^{\sharp} & \defas \\
-            \asem{D}{\texttt{while }b\texttt{ do }S} s^{\sharp} & \defas 
+        \small\begin{flalign*}
+            \asem{D}{\texttt{if }b\texttt{ then }S_1\texttt{ else }S_2} s^{\sharp} & \defas (\asem{B}{S_1} s^{\sharp}_{\mathbf{tt}}) \lor_{\mathbb{S}_A} (\asem{B}{S_2} s_{\mathbf{ff}}^{\sharp}) \\
+            where &\quad\,\,\, (s^{\sharp}_{\mathbf{tt}}, s_{\mathbf{ff}}^{\sharp}) = \asem{B}{b} s^{\sharp}\\
+            \asem{D}{\texttt{while }b\texttt{ do }S} s^{\sharp} & \defas \pi_2 (\asem{B}{b} (\text{GFP}_{\text{FIX } F} (\lambda s.s \land_{\mathbb{S}_A} F\,\,s))) \\
+            where &\quad\,\,\, F: \mathbb{S}_A \to \mathbb{S}_A \\
+            &\quad\,\,\, F\,\,s = s^{\sharp} \lor_{\mathbb{S}_A} (\asem{D}{S} \circ \pi_1 \circ \asem{B}{b} s) \\
         \end{flalign*}
     \end{exampleblock}
+
+    \small{Where FIX $F$ refers to the fixed point of the function $F$ and GFP$_s$ $f$ is the greatest fixed point of $f$ found starting from $s$.}
 \end{frame}
+
