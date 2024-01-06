@@ -91,8 +91,8 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
      in (sNeq, sEq)
   abstractB (Low e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | forSureLow (unbox a1) (unbox a2)  = (s2, bottom)
-    | forSureGEq (unbox a1) (unbox a2)  = (bottom, s2)
+    | forSureLow a1 a2                  = (s2, bottom)
+    | forSureGEq a1 a2                  = (bottom, s2)
     | otherwise                         = (applyTransitions $ enforceLow s e1 e2, applyTransitions $ enforceGEq s e1 e2)
     where
       (a1, s1) = abstractA e1 s
@@ -103,8 +103,8 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
      in (sGEq, sLow)
   abstractB (Grt e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
-    | forSureGrt (unbox a1) (unbox a2)  = (s2, bottom)
-    | forSureLEq (unbox a1) (unbox a2)  = (bottom, s2)
+    | forSureGrt a1 a2                  = (s2, bottom)
+    | forSureLEq a1 a2                  = (bottom, s2)
     | otherwise                         = (applyTransitions $ enforceGrt s2 e1 e2, applyTransitions $ enforceLEq s2 e1 e2)
     where
       (a1, s1) = abstractA e1 s

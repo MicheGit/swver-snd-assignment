@@ -1,9 +1,16 @@
-x := 5; // {"x": [5, 5]}
-if x < 10 then {
-skip; // {"x": [5, 5]}
-x := 10; // {"x": [10, 10]}
+if y < 0 then {
+skip; // {"y": [-Inf, -1]}
+x := (-10); // {"y": [-Inf, -1],"x": [-10, -10]}
 } else {
-skip; // BOTTOM STATE
-x := 0; // BOTTOM STATE
+skip; // {"y": [0, Inf]}
+x := 10; // {"y": [0, Inf],"x": [10, 10]}
 };
-skip; // {"x": [10, 10]}
+skip; // {"y": [-Inf, Inf],"x": [-10, 10]}
+if x++ = x then {
+skip; // BOTTOM STATE
+y := 10; // BOTTOM STATE
+} else {
+skip; // {"y": [-Inf, Inf],"x": [-9, 11]}
+y := 0; // {"y": [0, 0],"x": [-9, 11]}
+};
+skip; // {"y": [0, 0],"x": [-9, 11]}

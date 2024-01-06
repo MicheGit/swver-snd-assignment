@@ -1,7 +1,7 @@
 x := 1; // {"x": [1, 1]}
 skip; // {"x": [1, Inf]}
 while x++ <= 100 do {
-skip; // {"x": [2, Inf]}
-skip; // {"x": [2, Inf]}
+skip; // {"x": [3, Inf]}
+skip; // {"x": [3, Inf]}
 };
-skip; // {"x": [2, Inf]}
+skip; // {"x": [3, Inf]}

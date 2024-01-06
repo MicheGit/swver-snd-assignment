@@ -1,2 +1,2 @@
-x := 5;
-if x < 10 then x := 10 else x := 0
+if y < 0 then x := -10 else x := 10;
+if x++ = x then y := 10 else y := 0

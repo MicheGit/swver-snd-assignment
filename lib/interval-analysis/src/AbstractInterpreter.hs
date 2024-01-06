@@ -76,10 +76,10 @@ State update replaces values in the map.
 The bottom state (an error has occurred) doesn't allow updates.
 -}
 update :: (Eq a, BoundedLattice a) => String -> a -> AState a -> AState a
-update x v (AState map) =
-  if v == top
-    then AState (HM.delete x map)
-    else AState (HM.insert x v map)
+update x v (AState map)
+  | v == top    = AState (HM.delete x map)
+  | v == bottom = Bot
+  | otherwise   = AState (HM.insert x v map)
 update _ _ Bot = Bot
 
 (|->) :: (Eq a, BoundedLattice a) => AState a -> (String, a) -> AState a
