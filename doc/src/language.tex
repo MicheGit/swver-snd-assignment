@@ -15,7 +15,7 @@
 
 \begin{frame}{Arithmetic Expressions - Syntax}
     \begin{flalign*}
-        AExp ::= & n \pipe x \pipe \texttt{-}e \pipe (e)  \\
+        AExp ::= & n \pipe x \pipe \texttt{-}e \pipe (e) \pipe [e_1, e_2] \\
         \pipe & e_1 + e_2 \pipe e_1 - e_2 \pipe e_1 * e_2 \pipe e_1 / e_2  \\
         \pipe & x\texttt{++} \pipe \texttt{++}x \pipe x\texttt{--} \pipe \texttt{--}x 
     \end{flalign*}
@@ -37,6 +37,10 @@
                 (-a, \varphi') & \semantics{A}{e} \varphi = (a, \varphi') \\
                 \uparrow & (\semantics{A}{e} \varphi)\uparrow 
             \end{cases} \\
+            \semantics{A}{[e_1, e_2]} \varphi = & (a, \varphi'') \\
+            \text{where } & (a_1, \varphi') = \semantics{A}{e_1} \varphi \\
+            & (a_2, \varphi'') = \semantics{A}{e_2} \varphi' \\
+            & a \text{ is a random number between }a_1\text{ and }a_2
         \end{flalign*}
     \end{exampleblock}
 \end{frame}
