@@ -200,7 +200,7 @@
 
 \begin{frame}{Statements - Semantics (1)}
 
-    \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
+    \begin{exampleblock}{$\mathcal{S}_{ds} : \mathbf{While} \to State \hookrightarrow State$}
         \begin{flalign*}
             \semantics[ds]{S}{x\texttt{ := } e} \varphi = & \begin{cases}
                 \varphi'[x \mapsto a] & \semantics{A}{e} \varphi = (a, \varphi') \\
@@ -214,7 +214,7 @@
 \end{frame}
 
 \begin{frame}{Statements - Semantics (2)}
-    \begin{exampleblock}{$\mathcal{S}_{ds} : While \to State \hookrightarrow State$}
+    \begin{exampleblock}{$\mathcal{S}_{ds} : \mathbf{While} \to State \hookrightarrow State$}
         \begin{flalign*}
             \semantics[ds]{S}{S_1\,\texttt{;}\,S_2} \varphi = & (\semantics[ds]{S}{S_2} \circ \semantics[ds]{S}{S_1}) \varphi \\
             \semantics[ds]{S}{\texttt{if}\,b\,\texttt{then}\,S_1\,\texttt{else}\,S_2} \varphi = & cond(\semantics{B}{b}, \semantics[ds]{S}{S_1}, \semantics[ds]{S}{S_2}) \\
