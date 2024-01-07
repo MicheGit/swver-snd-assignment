@@ -69,18 +69,41 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
   abstractB :: (state ~ AState (BoundedInterval s r)) => BExp -> state -> (state, state)
   abstractB (Lit True) s = (s, bottom)
   abstractB (Lit False) s = (bottom, s)
-  abstractB (Or b1 b2) s =
-    let (sthen1, selse1) = abstractB b1 s
-     in if selse1 == bottom
-      then (sthen1, selse1) -- then for sure b1 evaluates to true or a runtime error, must not compute b2
-      else let (sthen2, selse2) = abstractB b2 selse1 -- compute only when b1 evaluates to false
-            in (sthen1 \/ sthen2, selse2) -- to evaluate false, the only case is that the second one evaluates false
-  abstractB (And b1 b2) s =
-    let (sthen1, selse1) = abstractB b1 s
-     in if sthen1 == bottom
-      then (sthen1, selse1) -- then for sure b1 evaluates to false or a runtime error, must not compute b2 
-      else let (sthen2, selse2) = abstractB b2 sthen1 -- compute only when b1 evaluates to true
-            in (sthen2, selse1 \/ selse2)
+  abstractB (Or b1 b2) s = (sthen1 \/ sthen2, selse2)
+    where
+      (sthen1, selse1) = abstractB b1 s
+      (sthen2, selse2) = abstractB b2 selse1
+      {-
+        if selse1 == bottom (i.e. b1 always evaluates to true)
+          then sthen2 == selse2 == bottom
+
+        hence:
+          b1 always true => 
+            b1 or b2 always true and b2 never evaluated =>
+              (sthen1 \/ bottom, bottom)
+          b1 can be false => (sthen1 \/ sthen2, selse2)
+            sthen1 are the states after b1 evaluates to true (b2 is not evaluated)
+            sthen2 are the states after b1 evaluates to false and b2 evaluates to true
+            selse2 are the states after b1 evaluates to false and b2 evaluates to false
+
+      -}
+  abstractB (And b1 b2) s = (sthen2, selse1 \/ selse2)
+    where
+      (sthen1, selse1) = abstractB b1 s      
+      (sthen2, selse2) = abstractB b2 sthen1 
+      {- 
+        if sthen1 == bottom (i.e. b1 evaluates always to false) 
+          then sthen2 == selse2 == bottom
+
+        hence:
+          b1 always false => 
+            b1 and b2 always false and b2 never evaluated =>
+            (bottom, selse1 \/ bottom)
+          b1 can be true => (sthen2, selse1 \/ selse2) 
+            sthen2 are the states after both b1 and b2 evaluate to true
+            selse1 are the states after b1 evaluates to false (and therefore there is short-circuit)
+            selse2 are the states after b1 evaluates to true and b2 evaluates to false
+        -}
   abstractB (Eq e1 e2) s
     | a1 == bottom || a2 == bottom      = (bottom, bottom)
     | a1 /\ a2 == bottom                = (bottom, s2)

@@ -44,55 +44,234 @@
     
 \end{frame}
 
-\subsection{Usage}
+\subsection{Abstract States}
 
-\begin{frame}[fragile]{Usage}
-    The program runs with the command
-    \begin{lstlisting}[escapeinside={(*}{*)}]{language=bash}
-        $ cabal run ai (*\texttt{--}*) (*\emph{path/to/file.whl}*)
-    \end{lstlisting}
-    This command will read the file given as input and as output:
-    \begin{itemize}
-        \item it will output the invariant after the last program point;
-        \item it will rewrite the input into a file called as the input plus \texttt{.inv}, with the invariants as comments at any program point.
-    \end{itemize}
+\begin{frame}{Abstract States (1)}
+    We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_{A} = Map(Var, A)$.
+    
+    \begin{alertblock}{Assumption}
+        When a variable is used before its definition, then its value is assumed to be ``unknown'' ($\top_{A}$). This is due to the fact that we assume that all referenced variables in the program are initialized.
+        %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Abstract States (2)}
+
+    Moreover, $\bot_{\mathbb{S}_{A}}$ represents an abnormal termination (no update operation can be performed over this state):
+
+    \begin{flalign*}
+        s(x) &= \begin{cases}
+            a & (x, a) \in s \\
+            \top_{A} & otherwise 
+        \end{cases} \\
+        s[x \mapsto a] &= \begin{cases}
+            \bot_{\mathbb{S}_{A}} & s = \bot_{\mathbb{S}_{A}} \\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top_{A},\,\,s \neq \bot_{\mathbb{S}_{A}}\\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \}  & otherwise
+        \end{cases}
+    \end{flalign*}
+
     
 \end{frame}
 
-\begin{frame}{Program Points}
-    The program points are located along with the statements:
+
+\begin{frame}{Abstract States (3)}
+    \begin{exampleblock}{$\mathbb{S}_{A}$ is partially ordered}
+        \[ s_1 \leq_{\mathbb{S}_A} s_2 \iff s_1(x) \leq_A s_2(x)\,\,\forall x \in Var \]
+    \end{exampleblock}
+
+    \begin{exampleblock}{$\mathbb{S}_{A}$ is a complete lattice}
+        \begin{flalign*}
+            \bot_{\mathbb{S}_{A}} &= \{ (x, \bot_{A}) \pipe x \in Var \} \\
+            \top_{\mathbb{S}_{A}} &= \emptyset \\
+            s_1 \lor_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \lor_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+            s_1 \land_{\mathbb{S}_{A}} s_2  &= \{ (var, a_1 \land_{A} a_2) \pipe (var, a_1) \in s_1, (var, a_2) \in s_2 \} \\
+            &\cup \{ e \pipe e \in s_1, e \notin s_2 \} \cup \{ e \pipe e \notin s_1,e \in s_2 \} \\
+        \end{flalign*} 
+    \end{exampleblock} 
+\end{frame}
+
+\subsection{Abstract Semantics}
+
+\begin{frame}{Abstract Semantics}
+    The abstract semantic functions are:
     \begin{itemize}
-        \item the terminals $x\mathtt{ := }e$ and \texttt{skip} are followed by one program point;
-        \item the \texttt{then} and \texttt{else} sub-statements in the branch statement are preceded by one program point each;
-        \item while statements are preceded by a program point, whose invariant is the loop invariant of that loop;
-        \item the \texttt{do} sub-statement in the loop statement is preceded by one program point;
-        \item while statements are followed by one program point, which is the invariant after the loop exit.
+        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{A} \to A \times \mathbb{S}_{A}$:
+        \begin{itemize}
+            \item the first element of the tuple approximates the possible results of the arithmetic expression;
+            \item the second element approximates the possible states after the transition induced by the expression;
+        \end{itemize}
+        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{A} \to \mathbb{S}_A \times \mathbb{S}_A$;
+        \begin{itemize}
+            \item the first element of the tuple approximates the states where the boolean expression can evaluate to \textbf{tt};
+            \item the second element approximates the states where the boolean expression can evaluate \textbf{ff}.
+        \end{itemize}
+        This function returns two states, instead of one, in order to preserve the short circuit behavior of boolean operators along with a compositional definition.
+        %% per mantenere rappresentato lo short-circuit degli operatori logici mantenendo la definizione composizionale era necessario che la funzione B# restituisse anche lo stato in caso BExp valutasse a falso
+        \item $\mathcal{D}^\sharp : While \to \mathbb{S}_{A} \to\mathbb{S}_{A}$.
     \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Examples (1)}
-    \begin{block}{Input}
-        \small\lstinputlisting[language=whilelang]{../assets/prog8.whl}
-    \end{block}
-    \begin{block}{Output}
-        \small\lstinputlisting[language=whilelang]{../assets/prog8.whl.inv}
-    \end{block}
+\begin{frame}{Abstract Semantics - AExpr (1)}
+    \begin{exampleblock}{$\mathcal{A}^\sharp : AExpr \to \mathbb{S}_A \to I_{m,n} \times \mathbb{S}_A$}
+        \begin{flalign*}
+            \asem{A}{n} s^{\sharp} = & (\{n_\mathbb{Z}\}, s^{\sharp}) \\
+            \asem{A}{x} s^{\sharp} = & (s^{\sharp}(x), s^{\sharp}) \\
+            \asem{A}{(e)} s^{\sharp} = & \asem{A}{e} s^{\sharp} \\
+            \asem{A}{-e} s^{\sharp} = & (-a^{\sharp}, s^{\sharp}_1) \\
+            \text{where } & (a^{\sharp}, s^{\sharp}_1) = \asem{A}{e} s^{\sharp} \\
+            \asem{A}{[e_1, e_2]} s^{\sharp} = & (\{a^{\sharp}_1,\dots,a^{\sharp}_2\}, s^{\sharp}_2) \\
+            \text{where } & (a^{\sharp}_1, s^{\sharp}_1) = \asem{A}{e_1} s^{\sharp} \\
+            & (a^{\sharp}_2, s^{\sharp}_2) = \asem{A}{e_2} s^{\sharp}_1
+        \end{flalign*}
+    \end{exampleblock}
 \end{frame}
 
-\begin{frame}[fragile]{Examples (2)}
-    \begin{block}{Input}
-        \small\lstinputlisting[language=whilelang]{../assets/prog9.whl}
-    \end{block}
-    \begin{block}{Output}
-        \small\lstinputlisting[language=whilelang]{../assets/prog9.whl.inv}
-    \end{block}
+
+\begin{frame}{Abstract Semantics - AExpr (2)}
+    \begin{exampleblock}{$\mathcal{A}^\sharp : AExpr \to \mathbb{S}_A \to I_{m,n} \times \mathbb{S}_A$}
+        \begin{flalign*}
+            \asem{A}{e_1\,\mathbf{op}\,e_2} s^{\sharp} = & (a^{\sharp}_1\,\,op_{I_{m,n}}\,\,a^{\sharp}_2, s^{\sharp}_2) \\ 
+            \text{where } & (a^{\sharp}_1, s^{\sharp}_1) = \asem{A}{e_1} s^{\sharp} \\
+            & (a^{\sharp}_2, s^{\sharp}_2) = \asem{A}{e_2} s^{\sharp}_1
+        \end{flalign*}
+    \end{exampleblock}
 \end{frame}
 
-\begin{frame}[fragile]{Examples (3)}
-    \begin{block}{Input}
-        \small\lstinputlisting[language=whilelang]{../assets/prog3.whl}
-    \end{block}
-    \begin{block}{Output}
-        \small\lstinputlisting[language=whilelang]{../assets/prog3.whl.inv}
-    \end{block}
+
+\begin{frame}{Abstract Semantics - AExpr (3)}
+    \begin{exampleblock}{$\mathcal{A}^\sharp : AExpr \to \mathbb{S}_A \to I_{m,n} \times \mathbb{S}_A$}
+        \begin{flalign*}
+            \asem{A}{x\texttt{++}} s^{\sharp} = & (s^{\sharp}(x), s^{\sharp}[x \mapsto x+_{I_{m,n}}1]) \\
+            \asem{A}{\texttt{++}x} s^{\sharp} = & (s^{\sharp}_1(x), s^{\sharp}_1) \\
+            \text{where } & s^{\sharp}[x \mapsto x+_{I_{m,n}}1] = s^{\sharp}_1 \\
+            \asem{A}{x\texttt{--}} s^{\sharp} = & (s^{\sharp}(x), s^{\sharp}[x \mapsto x-_{I_{m,n}}1]) \\
+            \asem{A}{\texttt{--}x} s^{\sharp} = & (s^{\sharp}_1(x), s^{\sharp}_1) \\
+            \text{where } & s^{\sharp}[x \mapsto x-_{I_{m,n}}1] = s^{\sharp}_1 \\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - BExpr (1)}
+    %The first member of the pair over-approximates the states where the boolean expression holds, the second member over-approximates the states where the expression doesn't hold.
+
+    \begin{exampleblock}{$\mathcal{B}^{\sharp} : BExp \to \mathbb{S}_A \to \mathbb{S}_A \times \mathbb{S}_A$}
+        \begin{flalign*}
+            \asem{B}{\texttt{true}} s^{\sharp} = & (s^{\sharp}, \bot_{\mathcal{S}_A}) \\
+            \asem{B}{\texttt{false}} s^{\sharp} = & (\bot_{\mathcal{S}_A}, s^{\sharp}) \\
+            \asem{B}{(b)} s^{\sharp} = & \asem{B}{b} s^{\sharp}\\
+            \asem{B}{b_1\,\,\texttt{and}\,\,b_2} s^{\sharp} = & \begin{cases}
+                (\mathbf{ff}, s^{\sharp}_1) & \asem{B}{b_1} s^{\sharp} = (\mathbf{ff}, s^{\sharp}_1) \\
+                \asem{B}{b_2} s^{\sharp}_1 & \asem{B}{b_1} s^{\sharp} = (\mathbf{tt}, s^{\sharp}_1) \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+            \asem{B}{b_1\,\,\texttt{or}\,\,b_2} s^{\sharp} = & \begin{cases}
+                (\mathbf{tt}, s^{\sharp}_1) & \asem{B}{b_1} s^{\sharp} = (\mathbf{tt}, s^{\sharp}_1) \\
+                \asem{B}{b_2} s^{\sharp}_1 & \asem{B}{b_1} s^{\sharp} = (\mathbf{ff}, s^{\sharp}_1) \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+        \end{flalign*}
+        
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - BExpr (2)}
+    Comparison operators propagate the state transition(s):
+
+    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
+        \begin{flalign*}
+            \semantics{B}{e_1\texttt{ = }e_2} \varphi = &\begin{cases}
+                (a_1 = a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+            \semantics{B}{e_1\texttt{ != }e_2} \varphi = &\begin{cases}
+                (a_1 \neq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}{Abstract Semantics - BExpr (3)}
+    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
+        \begin{flalign*}
+            \semantics{B}{e_1\texttt{ < }e_2} \varphi = & \begin{cases}
+                (a_1 < a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+            \semantics{B}{e_1\texttt{ >= }e_2} \varphi = & \begin{cases}
+                (a_1 \geq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - BExpr (4)}
+    \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
+        \begin{flalign*}
+            \semantics{B}{e_1\texttt{ > }e_2} \varphi = &\begin{cases}
+                (a_1 > a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\\\
+            \semantics{B}{e_1\texttt{ <= }e_2} \varphi = & \begin{cases}
+                (a_1 \leq a_2, \varphi'') & \semantics{A}{e_1} \varphi = (a_1, \varphi') \\
+                & \land \,\, \semantics{A}{e_2} \varphi' = (a_2, \varphi'') \\
+                \uparrow & \text{otherwise}
+            \end{cases}\\
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - Statements (1)}
+    \begin{exampleblock}{$\mathcal{D}^\sharp : \mathbf{While} \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
+        
+        \begin{flalign*}
+            \asem{D}{x\texttt{ := }e} s^{\sharp} & \defas
+            \begin{cases}
+                s'^\sharp [x \mapsto a] & (a, s'^\sharp) = \asem{A}{e} s^\sharp\\ 
+                & \land a \neq \bot_A \\
+                \bot_{\mathbb{S}_{A}} & otherwise
+            \end{cases}\\
+            \asem{D}{\texttt{skip}} s^{\sharp} & \defas s^{\sharp} \\
+            \asem{D}{S_1\texttt{ ; }S_2} s^{\sharp} & \defas (\asem{D}{S_1} \circ \asem{D}{S_2}) s^{\sharp}
+        \end{flalign*}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - Statements (2)}
+    \begin{exampleblock}{$\mathcal{D}^\sharp : \mathbf{While} \to \mathbb{S}_{A} \to \mathbb{S}_{A}$}
+        
+        \small\begin{flalign*}
+            \asem{D}{\texttt{if }b\texttt{ then }S_1\texttt{ else }S_2} s^{\sharp} & \defas (\asem{B}{S_1} s^{\sharp}_{\mathbf{tt}}) \lor_{\mathbb{S}_A} (\asem{B}{S_2} s_{\mathbf{ff}}^{\sharp}) \\
+            where &\quad\,\,\, (s^{\sharp}_{\mathbf{tt}}, s_{\mathbf{ff}}^{\sharp}) = \asem{B}{b} s^{\sharp}\\
+            \asem{D}{\texttt{while }b\texttt{ do }S} s^{\sharp} & \defas \pi_2 (\asem{B}{b} (\text{GFP}_{\text{FIX } F} (\lambda s.s \land_{\mathbb{S}_A} F\,\,s))) \\
+            where &\quad\,\,\, F: \mathbb{S}_A \to \mathbb{S}_A \\
+            &\quad\,\,\, F\,\,s = s^{\sharp} \lor_{\mathbb{S}_A} (\asem{D}{S} \circ \pi_1 \circ \asem{B}{b} s) \\
+        \end{flalign*}
+    \end{exampleblock}
+
+    \small{Where FIX $F$ refers to the fixed point of the function $F$ and GFP$_s$ $f$ is the greatest fixed point of $f$ found starting from $s$.}
+\end{frame}
+
+\begin{frame}{Abstract Semantics - Statements (3)}
+    \small\begin{alertblock}{Widened invariant refinition}
+        Since $I_{m,n}$ has infinitely ascending chains, FIX $F$ might diverge. Therefore, in the implementation, we make use of a widened iteration sequence.
+
+        The \textbf{widened invariant} resulting from (possibly) widened FIX $F$ is later refined with the GFP of $\lambda s.s \land_{\mathbb{S}_A} F\,s$.
+    \end{alertblock}
+
+    \small{This is sound:
+    \begin{itemize}
+        \item the widened invariant $s^{*\sharp}$ is a sound over-approximation of the smallest loop invariant $s^{*}$;
+        \item $s^{*} = F\,\,s^{*}$, so $s^{*} = s^{*} \land_{\mathbb{S}_A} F\,\,s^{*}$: therefore $\lambda s.s \land_{\mathbb{S}_A} F\,s$ (descending monotone) is a sound filtering of those states not in $s^*$. 
+    \end{itemize}
+    Therefore, GFP $F$ starting from $s^{*\sharp}$ is the most precise refinement of the widened invariant.}
+    
 \end{frame}

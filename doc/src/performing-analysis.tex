@@ -1,0 +1,52 @@
+\section{Performing Analysis}
+
+\begin{frame}[fragile]{Usage}
+    The program runs with the command
+    \begin{lstlisting}[escapeinside={(*}{*)}]{language=bash}
+        $ cabal run ai (*\texttt{--}*) (*\emph{path/to/file.whl}*)
+    \end{lstlisting}
+    This command will read the file given as input and as output:
+    \begin{itemize}
+        \item it will output the invariant after the last program point;
+        \item it will rewrite the input into a file called as the input plus \texttt{.inv}, with the invariants as comments at any program point.
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Program Points}
+    The program points are located along with the statements:
+    \begin{itemize}
+        \item the terminals $x\mathtt{ := }e$ and \texttt{skip} are followed by one program point;
+        \item the \texttt{then} and \texttt{else} sub-statements in the branch statement are preceded by one program point each;
+        \item while statements are preceded by a program point, whose invariant is the loop invariant of that loop;
+        \item the \texttt{do} sub-statement in the loop statement is preceded by one program point;
+        \item while statements are followed by one program point, which is the invariant after the loop exit.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Examples (1)}
+    \begin{block}{Input}
+        \small\lstinputlisting[language=whilelang]{../assets/prog8.whl}
+    \end{block}
+    \begin{block}{Output}
+        \small\lstinputlisting[language=whilelang]{../assets/prog8.whl.inv}
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Examples (2)}
+    \begin{block}{Input}
+        \small\lstinputlisting[language=whilelang]{../assets/prog9.whl}
+    \end{block}
+    \begin{block}{Output}
+        \small\lstinputlisting[language=whilelang]{../assets/prog9.whl.inv}
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Examples (3)}
+    \begin{block}{Input}
+        \small\lstinputlisting[language=whilelang]{../assets/prog3.whl}
+    \end{block}
+    \begin{block}{Output}
+        \small\lstinputlisting[language=whilelang]{../assets/prog3.whl.inv}
+    \end{block}
+\end{frame}
