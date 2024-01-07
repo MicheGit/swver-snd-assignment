@@ -1,15 +1,11 @@
 module Main where
-import Data.Reflection
-import Data.Maybe (fromMaybe)
+  
 import Text.Read (readMaybe)
 import System.Environment (getArgs)
 import Control.Exception (throw)
 import While.Parser (parseWhileProgram)
-import Data.Proxy (Proxy(Proxy))
 
 import AbstractDomains.InfiniteIntegers
-import AbstractDomains.Interval
-import AbstractDomains.BoundedInterval
 
 import AbstractInterpreter
 import BoundedIntervalAnalysis

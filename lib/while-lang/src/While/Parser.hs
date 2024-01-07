@@ -41,6 +41,7 @@ instance Parsable AExp where
     , parseVar
     , parseNeg
     , betweenRound parseTerm
+    , parseRandom
     ]
   binops :: [Parser (BinOp AExp)]
   binops =
@@ -60,6 +61,12 @@ parseNeg :: Parser AExp
 parseNeg = do
     symbol "-"
     Neg <$> parseLeaf
+
+parseRandom :: Parser AExp
+parseRandom = betweenSquare (do
+    l <- parseTerm
+    symbol ","
+    Rnd l <$> parseTerm)
 
 parseInc :: Parser AExp
 parseInc = lexeme $ do
@@ -88,14 +95,14 @@ parsePrefixDec = lexeme $ do
 
 instance Parsable BExp where
   leaves :: [Parser BExp]
-  leaves = 
+  leaves =
     [ parseLit
     , parseNot
     , parseCmp
     , betweenRound parseTerm
     ]
   binops :: [Parser (BinOp BExp)]
-  binops = 
+  binops =
     [ operAnd <$ keyword "and"
     , operOr  <$ keyword "or"
     ]
@@ -129,7 +136,7 @@ parseComparisonOperator = choice
 
 instance Parsable Stmt where
   leaves :: [Parser Stmt]
-  leaves = 
+  leaves =
     [ parseAssign
     , parseSkip
     , parseBrnc
@@ -162,7 +169,7 @@ parseLoop = do
     keyword "while"
     b <- parseTerm
     keyword "do"
-    Loop b <$> parseLeaf 
+    Loop b <$> parseLeaf
 
 -- Main Parsable typeclass
 class Parsable a where
@@ -254,5 +261,8 @@ betweenRound = between (symbol "(") (symbol ")")
 -}
 betweenCurly :: Parser a -> Parser a
 betweenCurly = between (symbol "{") (symbol "}")
+
+betweenSquare :: Parser a -> Parser a
+betweenSquare = between (symbol "[") (symbol "]")
 
 

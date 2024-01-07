@@ -16,6 +16,7 @@ data AExp
     | Dec String
     | PrefixInc String
     | PrefixDec String
+    | Rnd AExp AExp
     deriving (Eq)
 
 instance Show AExp where
@@ -30,6 +31,7 @@ instance Show AExp where
     show (Dec x) = x ++ "--"
     show (PrefixInc x) = "++" ++ x
     show (PrefixDec x) = "--" ++ x
+    show (Rnd a b) = "[" ++ show a ++ ", " ++ show b ++ "]"
 
 -- the higher the number, the most priority it has
 -- precedence levels are from https://en.cppreference.com/w/cpp/language/operator_precedence

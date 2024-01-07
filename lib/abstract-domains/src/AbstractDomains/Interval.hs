@@ -65,6 +65,11 @@ instance Fractional Interval where
   a / Range l2 h2 | l2 < 0 && h2 > 0 = binop div a (Range l2 (-1)) \/ binop div a (Range 1 h2)
   a / b = binop div a b
 
+random :: InfInt -> InfInt -> Interval
+random l h
+  | l > h     = bottom
+  | otherwise = Range l h
+
 instance Lattice Interval where
     (\/) :: Interval -> Interval -> Interval
     Bot \/ a = a

@@ -60,6 +60,10 @@ instance (r ~ (InfInt, InfInt), Reifies s r) => AI (BoundedInterval s r) where
         val' = bind $ val - 1
         s' = s |-> (x, val')
      in (val', s')
+  abstractA (Rnd e1 e2) s =
+    let (BI (Range l _), s') = abstractA e1 s
+        (BI (Range _ h), s'') = abstractA e2 s'
+     in (bind $ random l h, s'')
 
 
   abstractB :: (state ~ AState (BoundedInterval s r)) => BExp -> state -> (state, state)
