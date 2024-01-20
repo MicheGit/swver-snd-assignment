@@ -20,9 +20,9 @@
         \pipe & x\texttt{++} \pipe \texttt{++}x \pipe x\texttt{--} \pipe \texttt{--}x 
     \end{flalign*}
 
-    The syntax allows arithmetic expression that change the state, such as \texttt{x++} and \texttt{x--}.
+    The syntax allows arithmetic expressions that change the state, such as \texttt{x++} and \texttt{x--}.
 
-    The operator $\mathtt{(\cdot/\cdot)}: \mathbb{N} \to \mathbb{N} \to \mathbb{N}$ returns the quotient of the two arguments. It's undefined when the second argument is $0$.
+    The operator $\mathtt{(\cdot/\cdot)}: \mathbb{N} \to \mathbb{N} \hookrightarrow \mathbb{N}$ returns the quotient of the two arguments. It's undefined when the second argument is $0$.
 \end{frame}
     
 \begin{frame}{Arithmetic Expressions - Semantics (1)}
@@ -40,7 +40,7 @@
             \semantics{A}{[e_1, e_2]} \varphi = & (a, \varphi'') \\
             \text{where } & (a_1, \varphi') = \semantics{A}{e_1} \varphi \\
             & (a_2, \varphi'') = \semantics{A}{e_2} \varphi' \\
-            & a \text{ is a random number between }a_1\text{ and }a_2
+            & a \text{ is a random integer between }a_1\text{ and }a_2
         \end{flalign*}
     \end{exampleblock}
 \end{frame}
@@ -86,11 +86,11 @@
         \pipe & e_1 \texttt{ > } e_2 \pipe e_1 \texttt{ <= } e_2
     \end{flalign*}
 
-    The operator $(\neg \cdot): \mathbb{T} \to \mathbb{T}$ is not in the minimal definition: it is defined as syntactic sugar later on.
+    The operator $(\neg \cdot): \mathbb{T} \to \mathbb{T}$ is defined as syntactic sugar later on.
 \end{frame}
 
 \begin{frame}{Boolean Expressions - Semantics (1)}
-    Operators between booleans short-circuit evaluation:
+    Conjuntion and disjunction short-circuit evaluation:
     \begin{exampleblock}{$\mathcal{B} : BExp \to State \hookrightarrow \mathbb{T} \times State$}
         \begin{flalign*}
             \semantics{B}{\texttt{true}} \varphi = & (\mathbf{tt}, \varphi) \\

@@ -32,13 +32,13 @@
     \begin{itemize}
         \item $I_{m,n}$ has no infinite ascending chains when $m \neq -\infty \land n \neq \infty$:
         \begin{itemize}
-            \item when $m,n\in \mathbb{N}$ the fixed-point iteration sequence induced by $\mathcal{D}^{\#}\llbracket S_1 \rrbracket s$ $\forall s \in \mathbb{S}_{I_{m,n}},\,\,S_1 \in \textbf{While}$ converges in finite time;
+            \item when $m,n\in \mathbb{N}$ the fixed-point iteration sequence induced by $\forall s \in \mathbb{S}_{I_{m,n}},\,\,S_1 \in \textbf{While}$.$\mathcal{D}^{\#}\llbracket S_1 \rrbracket s$ converges in finite time;
             \item otherwise, we must make use of the widening operator $\nabla: \mathbb{S}_{I_{m,n}} \to \mathbb{S}_{I_{m,n}} \to\mathbb{S}_{I_{m,n}}$ in order to enforce convergence. 
         \end{itemize}
         \item $I_{m,n}$ has no infinite descending chains:
         \begin{itemize}
             \item any descending greatest fixed-point search converges in finite time;
-            \item there is no need for a narrowing operator $\Delta: \mathbb{S}_{I_{m,n}} \to \mathbb{S}_{I_{m,n}} \to\mathbb{S}_{I_{m,n}}$.
+            \item there is no need for a narrowing operator $\Delta: \mathbb{S}_{I_{m,n}} \to \mathbb{S}_{I_{m,n}} \to\mathbb{S}_{I_{m,n}}$
         \end{itemize}
     \end{itemize}
     
@@ -50,34 +50,14 @@
     We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_{I_{m,n}} = Map(Var, A)$.
     
     \begin{alertblock}{Assumption}
-        When a variable is used before its definition, then its value is assumed to be ``unknown'' ($\top_{I_{m,n}}$). This is due to the fact that we assume that all referenced variables in the program are initialized.
+        We assume that all the variables referenced in the program have been initialized. Therefore, the value of a non initialized variable is assumed to be ``unknown'' ($\top_{I_{m,n}}$). 
         %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
     \end{alertblock}
 \end{frame}
 
 \begin{frame}{Abstract States (2)}
-
-    Moreover, $\bot_{\mathbb{S}_{I_{m,n}}}$ represents an abnormal termination (no update operation can be performed over this state):
-
-    \begin{flalign*}
-        s(x) &= \begin{cases}
-            a & (x, a) \in s \\
-            \top_{I_{m,n}} & otherwise 
-        \end{cases} \\
-        s[x \mapsto a] &= \begin{cases}
-            \bot_{\mathbb{S}_{I_{m,n}}} & s = \bot_{\mathbb{S}_{I_{m,n}}} \\
-            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top_{I_{m,n}},\,\,s \neq \bot_{\mathbb{S}_{I_{m,n}}}\\
-            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \}  & otherwise
-        \end{cases}
-    \end{flalign*}
-
-    
-\end{frame}
-
-
-\begin{frame}{Abstract States (3)}
     \begin{exampleblock}{$\mathbb{S}_{I_{m,n}}$ is partially ordered}
-        \[ s_1 \leq_{\mathbb{S}_{I_{m,n}}} s_2 \iff s_1(x) \leq_{I_{m,n}} s_2(x)\,\,\forall x \in Var \]
+        \[ s_1 \sqsubseteq_{\mathbb{S}_{I_{m,n}}} s_2 \, \Longleftrightarrow \forall x \in Var\,. s_1(x) \sqsubseteq_{I_{m,n}} s_2(x) \]
     \end{exampleblock}
 
     \begin{exampleblock}{$\mathbb{S}_{I_{m,n}}$ is a complete lattice}
@@ -91,17 +71,34 @@
     \end{exampleblock} 
 \end{frame}
 
+\begin{frame}{Abstract States (3)}
+
+    $\bot_{\mathbb{S}_{I_{m,n}}}$ represents an abnormal termination or sure divergence $\uparrow$. Hence, such a state is propagated through the remaining execution and no recover is possible:
+
+    \begin{flalign*}
+        s(x) &= \begin{cases}
+            a & (x, a) \in s \\
+            \top_{I_{m,n}} & otherwise 
+        \end{cases} \\
+        s[x \mapsto a] &= \begin{cases}
+            \bot_{\mathbb{S}_{I_{m,n}}} & s = \bot_{\mathbb{S}_{I_{m,n}}} \\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \} & a \neq \top_{I_{m,n}},\,\,s \neq \bot_{\mathbb{S}_{I_{m,n}}}\\
+            \{ (k, v) \pipe (k, v) \in s,\,\,k\neq x \}  & otherwise
+        \end{cases}
+    \end{flalign*}
+\end{frame}
+
 \subsection{Abstract Semantics}
 
 \begin{frame}{Abstract Semantics}
     The abstract semantic functions are:
     \begin{itemize}
-        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{I_{m,n}} \to A \times \mathbb{S}_{I_{m,n}}$:
+        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{I_{m,n}} \to A \times \mathbb{S}_{I_{m,n}}$
         \begin{itemize}
             \item the first element of the tuple approximates the possible results of the arithmetic expression;
             \item the second element approximates the possible states after the transition induced by the expression;
         \end{itemize}
-        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{I_{m,n}} \to \mathbb{S}_{I_{m,n}} \times \mathbb{S}_{I_{m,n}}$;
+        \item $\mathcal{B}^\sharp : BExp \to \mathbb{S}_{I_{m,n}} \to \mathbb{S}_{I_{m,n}} \times \mathbb{S}_{I_{m,n}}$
         \begin{itemize}
             \item the first element of the tuple approximates the states where the boolean expression can evaluate to \textbf{tt};
             \item the second element approximates the states where the boolean expression can evaluate \textbf{ff}.
