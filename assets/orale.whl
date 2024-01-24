@@ -1,0 +1,11 @@
+x := [0, 10];
+if x != x then {
+    y := x
+} else {
+    y := 10
+};
+if x < x then {
+    y := x
+} else {
+    y := 5
+}

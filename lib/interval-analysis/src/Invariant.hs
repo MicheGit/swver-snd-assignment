@@ -1,1 +1,0 @@
-module Invariant where

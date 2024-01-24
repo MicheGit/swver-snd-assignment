@@ -15,7 +15,7 @@
 \begin{frame}{Bounded Intervals - Properties (1)}
 
     \begin{exampleblock}{$I_{m,n}$ is partially ordered}
-        \[ i_1 \leq i_2 \iff i_1 \subseteq i_2 \]
+        \[ i_1 \sqsubseteq i_2 \iff i_1 \subseteq i_2 \]
     \end{exampleblock}
 
     \begin{exampleblock}{$I_{m,n}$ is a complete lattice}
@@ -47,10 +47,10 @@
 \subsection{Abstract States}
 
 \begin{frame}{Abstract States (1)}
-    We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_{I_{m,n}} = Map(Var, A)$.
+    We define for any abstract domain $A$, which is a complete lattice as well, the abstract state type $\mathbb{S}_A = Map(Var, A)$.
     
     \begin{alertblock}{Assumption}
-        We assume that all the variables referenced in the program have been initialized. Therefore, the value of a non initialized variable is assumed to be ``unknown'' ($\top_{I_{m,n}}$). 
+        We assume that all the variables referenced in the program have been initialized. Therefore, the value of a non initialized variable is assumed to be ``unknown'' ($\top_A$). 
         %% Non è affare nostro sapere se ci sono delle variabili non inizializzate, bensì ci occorre sapere se il programma termini in maniera corretta
     \end{alertblock}
 \end{frame}
@@ -93,7 +93,7 @@
 \begin{frame}{Abstract Semantics}
     The abstract semantic functions are:
     \begin{itemize}
-        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{I_{m,n}} \to A \times \mathbb{S}_{I_{m,n}}$
+        \item $\mathcal{A}^\sharp : AExp \to \mathbb{S}_{I_{m,n}} \to I_{m,n} \times \mathbb{S}_{I_{m,n}}$
         \begin{itemize}
             \item the first element of the tuple approximates the possible results of the arithmetic expression;
             \item the second element approximates the possible states after the transition induced by the expression;

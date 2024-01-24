@@ -37,10 +37,12 @@
                 (-a, \varphi') & \semantics{A}{e} \varphi = (a, \varphi') \\
                 \uparrow & (\semantics{A}{e} \varphi)\uparrow 
             \end{cases} \\
-            \semantics{A}{[e_1, e_2]} \varphi = & (a, \varphi'') \\
-            \text{where } & (a_1, \varphi') = \semantics{A}{e_1} \varphi \\
-            & (a_2, \varphi'') = \semantics{A}{e_2} \varphi' \\
-            & a \text{ is a random integer between }a_1\text{ and }a_2
+            \semantics{A}{[e_1, e_2]} \varphi = &
+            \begin{cases}
+                (rnd(a_1, a_2), \varphi'') & (a_1, \varphi') = \semantics{A}{e_1} \varphi \\
+                & \land\,\,(a_2, \varphi'') = \semantics{A}{e_2} \varphi' \\
+                \uparrow & \text{otherwise}
+            \end{cases}  \\
         \end{flalign*}
     \end{exampleblock}
 \end{frame}
